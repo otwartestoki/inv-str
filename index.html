@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Strategia inwestycyjna</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: #202020;
+      background: #f7f8f5;
+    }
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 36px 24px 56px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      font-weight: 700;
+    }
+    .lead {
+      margin: 0 0 28px;
+      color: #555;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .tiles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+    }
+    .tile {
+      display: block;
+      padding: 18px;
+      border: 1px solid #d8d1c3;
+      border-radius: 8px;
+      background: #fff;
+      text-decoration: none;
+      color: inherit;
+    }
+    .tile:hover {
+      border-color: #15616d;
+    }
+    .tile strong {
+      display: block;
+      margin-bottom: 6px;
+      color: #15616d;
+      font-size: 18px;
+    }
+    .tile span {
+      display: block;
+      color: #5d5d5d;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Strategia inwestycyjna</h1>
+    <p class="lead">Lokalny panel do pracy ze strategia: backtest, raporty oraz import historii portfela z plikow CSV.</p>
+    <section class="tiles" aria-label="Nawigacja">
+      <a class="tile" href="report_view.html">
+        <strong>Backtest strategii</strong>
+        <span>Wyniki, wykresy, benchmarki, alokacje, transakcje modelowe i opis zasad dzialania.</span>
+      </a>
+      <a class="tile" href="portfolio_import.html">
+        <strong>Historia portfela i rebalancing</strong>
+        <span>Import CSV z kont, historia salda, CAGR, drawdown oraz wytyczne transakcji wzgledem aktualnych wag strategii.</span>
+      </a>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,1477 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Backtest strategii</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: #222;
+      background: #fbfbf8;
+    }
+    main {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 28px 24px 48px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+    p {
+      margin: 0 0 24px;
+      color: #555;
+    }
+    section {
+      margin-top: 28px;
+    }
+    h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+    h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+    }
+    img {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      border: 1px solid #ddd8cc;
+      background: #fff;
+    }
+    .report-index {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
+      margin: 22px 0 34px;
+    }
+    .report-group {
+      border-top: 1px solid #d8d1c3;
+      padding-top: 12px;
+    }
+    .report-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .report-list li {
+      margin: 0 0 10px;
+    }
+    .report-list span {
+      display: block;
+      margin-top: 2px;
+      color: #666;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+    .chart-note {
+      margin: -4px 0 10px;
+      font-size: 13px;
+      line-height: 1.4;
+      color: #666;
+    }
+    .equity-dynamic-chart {
+      width: 100%;
+      min-height: 620px;
+      border: 1px solid #ddd8cc;
+      background: #fff;
+    }
+    .equity-dynamic-chart svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    .equity-dynamic-chart text {
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+    a {
+      color: #15616d;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .top-nav {
+      margin: 0 0 18px;
+      font-size: 14px;
+    }
+    .rebalance-panel {
+      margin: 22px 0 30px;
+      border: 1px solid #d8d1c3;
+      background: #fff;
+      padding: 16px;
+    }
+    .leverage-warning {
+      margin: 18px 0 12px;
+      border: 1px solid #b94a48;
+      background: #fff4f1;
+      color: #5f1f1f;
+      padding: 12px 14px;
+    }
+    .leverage-warning[hidden] {
+      display: none;
+    }
+    .leverage-warning strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 15px;
+    }
+    .leverage-warning span {
+      display: block;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .rebalance-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .rebalance-head h2 {
+      margin: 0;
+    }
+    .rebalance-date {
+      color: #666;
+      font-size: 13px;
+    }
+    .rebalance-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .rebalance-field label {
+      display: block;
+      margin-bottom: 4px;
+      color: #555;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .rebalance-field input {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 8px 9px;
+      border: 1px solid #cfc8ba;
+      background: #fff;
+      color: #222;
+      font: inherit;
+      font-size: 14px;
+    }
+    .rebalance-field select {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 8px 9px;
+      border: 1px solid #cfc8ba;
+      background: #fff;
+      color: #222;
+      font: inherit;
+      font-size: 14px;
+    }
+    .rebalance-pair {
+      display: grid;
+      grid-template-columns: 1fr 86px;
+      gap: 6px;
+    }
+    .rebalance-total-input {
+      display: grid;
+      grid-template-columns: minmax(220px, 300px) minmax(220px, 320px) 1fr;
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 12px;
+    }
+    .rebalance-hint {
+      color: #666;
+      font-size: 13px;
+      line-height: 1.35;
+      margin: 0 0 3px;
+    }
+    .rebalance-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .rebalance-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: #444;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .rebalance-option input {
+      width: auto;
+      margin: 0;
+    }
+    .rebalance-actions button {
+      border: 1px solid #15616d;
+      background: #15616d;
+      color: #fff;
+      padding: 8px 12px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .rebalance-actions button.secondary {
+      background: #fff;
+      color: #15616d;
+    }
+    .rebalance-total {
+      color: #333;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .rebalance-table-wrap {
+      overflow-x: auto;
+    }
+    .rebalance-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .rebalance-table th,
+    .rebalance-table td {
+      padding: 7px 8px;
+      border-bottom: 1px solid #e6e1d6;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .rebalance-table th:first-child,
+    .rebalance-table td:first-child {
+      text-align: left;
+    }
+    .rebalance-table th {
+      background: #f1eee6;
+    }
+    .leveraged-box {
+      margin: 4px 0 16px;
+      padding: 12px;
+      border: 1px solid #e6e1d6;
+      background: #fbfaf6;
+    }
+    .leveraged-box h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+    }
+    .leveraged-box p {
+      margin: 0 0 12px;
+      color: #666;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+    .leveraged-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .leveraged-summary {
+      margin: 0 0 10px;
+      color: #333;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .trade-buy {
+      color: #146c43;
+      font-weight: 700;
+    }
+    .trade-sell {
+      color: #a33a3a;
+      font-weight: 700;
+    }
+    .trade-hold {
+      color: #666;
+    }
+    .currency-view {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      align-items: center;
+      margin: 4px 0 16px;
+      padding: 12px;
+      border: 1px solid #e6e1d6;
+      background: #fbfaf6;
+    }
+    .currency-pie-block {
+      display: grid;
+      grid-template-columns: 128px 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+    .currency-pie {
+      width: 128px;
+      height: 128px;
+      border-radius: 50%;
+      border: 1px solid #d8d1c3;
+      background: conic-gradient(#15616d 0deg, #cfc8ba 0deg);
+    }
+    .currency-legend {
+      display: grid;
+      gap: 7px;
+      color: #333;
+      font-size: 13px;
+    }
+    .currency-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+    .currency-dot {
+      width: 11px;
+      height: 11px;
+      display: inline-block;
+      background: #15616d;
+    }
+    .currency-dot.foreign {
+      background: #cfc8ba;
+    }
+    .allocation-chart {
+      margin: 4px 0 16px;
+      padding: 12px;
+      border: 1px solid #e6e1d6;
+      background: #fff;
+    }
+    .allocation-chart h3 {
+      margin: 0 0 10px;
+      font-size: 14px;
+    }
+    .allocation-chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 10px;
+      color: #555;
+      font-size: 12px;
+    }
+    .allocation-chart-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .allocation-swatch {
+      width: 18px;
+      height: 8px;
+      display: inline-block;
+      background: #15616d;
+    }
+    .allocation-swatch.target {
+      width: 3px;
+      height: 14px;
+      background: #a33a3a;
+    }
+    .allocation-chart-row {
+      display: grid;
+      grid-template-columns: minmax(170px, 240px) 1fr minmax(90px, auto);
+      gap: 10px;
+      align-items: center;
+      margin: 8px 0;
+      font-size: 12px;
+    }
+    .allocation-chart-label {
+      color: #333;
+      font-weight: 600;
+    }
+    .allocation-track {
+      position: relative;
+      height: 18px;
+      background: #f1eee6;
+      border: 1px solid #e0d9cc;
+      overflow: hidden;
+    }
+    .allocation-current {
+      height: 100%;
+      width: 0;
+      background: #15616d;
+    }
+    .allocation-target {
+      position: absolute;
+      top: -2px;
+      bottom: -2px;
+      width: 3px;
+      background: #a33a3a;
+      transform: translateX(-1px);
+    }
+    .allocation-chart-values {
+      color: #555;
+      text-align: right;
+      white-space: nowrap;
+    }
+    @media (max-width: 560px) {
+      .currency-view {
+        grid-template-columns: 1fr;
+      }
+      .currency-pie-block {
+        grid-template-columns: 1fr;
+      }
+      .allocation-chart-row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+      }
+      .allocation-chart-values {
+        text-align: left;
+      }
+    }
+  </style>
+  <script src="reports/latest_allocation.js"></script>
+  <script src="reports/equity_curve_data.js"></script>
+</head>
+<body>
+  <main>
+    <nav class="top-nav"><a href="index.html">Strona glowna</a> / Backtest strategii</nav>
+    <h1>Backtest strategii</h1>
+    <p>Uporzadkowany podglad wynikow, wykresow i tabel z backtestu strategii od 1954 roku. Okres przed 1985 korzysta z proxy i ma nizsza jakosc danych niz nowszy fragment.</p>
+    <div class="leverage-warning" id="leverage-warning" hidden>
+      <strong>Uwaga: aktywny tryb lewarowany</strong>
+      <span id="leverage-warning-text"></span>
+    </div>
+
+    <section class="rebalance-panel" aria-label="Panel rebalancingu portfela">
+      <div class="rebalance-head">
+        <h2>Rebalancing portfela</h2>
+        <span class="rebalance-date" id="rebalance-target-date">Docelowa alokacja: wczytywanie...</span>
+      </div>
+      <div class="rebalance-total-input">
+        <div class="rebalance-field">
+          <label for="rebalance-strategy-select">Strategia dla raportow i rebalancingu</label>
+          <select id="rebalance-strategy-select">
+            <option value="strategy_recommended_mix">Rekomendowany miks 30/70/0</option>
+            <option value="strategy">Strategia bazowa</option>
+            <option value="strategy_medium_aggressive">Strategia srednio agresywna</option>
+            <option value="strategy_aggressive">Strategia agresywna</option>
+          </select>
+        </div>
+        <div class="rebalance-field">
+          <label for="rebalance-manual-total">Suma portfela</label>
+          <input id="rebalance-manual-total" inputmode="decimal" placeholder="opcjonalnie, np. 100000">
+        </div>
+        <p class="rebalance-hint">Mozesz wpisac kwoty albo procenty. Kwota ma pierwszenstwo; akcje sa jedna pula. Przy strategii lewarowanej cel akcji w tej tabeli jest wartoscia gotowkowa ETF-ow 1x/2x/3x, a nie ekspozycja brutto. Obligacje nominalne sa rdzeniem, a reszta dzieli sie proporcjonalnie na stale/zmienne wedlug cyklu. Panel podpowiada transakcje dopiero po odchyleniu o 5 p.p.</p>
+      </div>
+      <div class="rebalance-grid" id="rebalance-inputs"></div>
+      <div class="rebalance-actions">
+        <button type="button" id="rebalance-calc">Przelicz</button>
+        <button type="button" class="secondary" id="rebalance-clear">Wyczysc</button>
+        <label class="rebalance-option">
+          <input type="checkbox" id="rebalance-lock-fixed" checked>
+          Nie sprzedawaj obligacji stalo %
+        </label>
+        <span class="rebalance-total" id="rebalance-total">Suma portfela: 0.00</span>
+      </div>
+      <div class="currency-view" aria-label="Szacunkowa ekspozycja walutowa">
+        <div class="currency-pie-block">
+          <div class="currency-pie" id="currency-pie-current"></div>
+          <div class="currency-legend">
+            <strong>Waluty obecnie</strong>
+            <div class="currency-row"><span class="currency-dot"></span><span id="currency-current-pln">PLN: 0.00 (0.0%)</span></div>
+            <div class="currency-row"><span class="currency-dot foreign"></span><span id="currency-current-foreign">Inne waluty: 0.00 (0.0%)</span></div>
+          </div>
+        </div>
+        <div class="currency-pie-block">
+          <div class="currency-pie" id="currency-pie-target"></div>
+          <div class="currency-legend">
+            <strong>Waluty po rebalancingu</strong>
+            <div class="currency-row"><span class="currency-dot"></span><span id="currency-target-pln">PLN: 0.00 (0.0%)</span></div>
+            <div class="currency-row"><span class="currency-dot foreign"></span><span id="currency-target-foreign">Inne waluty: 0.00 (0.0%)</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="allocation-chart" aria-label="Porownanie obecnej i docelowej alokacji">
+        <h3>Obecna alokacja vs cel strategii</h3>
+        <div class="allocation-chart-legend">
+          <span><i class="allocation-swatch"></i> obecnie</span>
+          <span><i class="allocation-swatch target"></i> cel</span>
+        </div>
+        <div id="allocation-compare-chart"></div>
+      </div>
+      <div class="leveraged-box" aria-label="Rebalancing ETF-ow lewarowanych">
+        <h3>Realizacja ekspozycji akcjami 1x/2x/3x</h3>
+        <p>Opcjonalnie wpisz obecne pozycje w ETF-ach 1x/2x/3x. Te pola nie dodaja sie drugi raz do sumy portfela; sluza tylko do policzenia, jak zamienic docelowa ekspozycje SPX/ACWI i NDX na realna kwote zakupu w instrumentach lewarowanych.</p>
+        <div class="leveraged-grid" id="leveraged-inputs"></div>
+        <div class="leveraged-summary" id="leveraged-summary">Ekspozycja akcyjna: 0.0%</div>
+        <div class="rebalance-table-wrap">
+          <table class="rebalance-table">
+            <thead>
+              <tr>
+                <th>Instrument</th>
+                <th>Dzwignia</th>
+                <th>Obecnie ETF</th>
+                <th>Obecna eksp.</th>
+                <th>Cel ETF</th>
+                <th>Cel eksp.</th>
+                <th>Zmiana eksp.</th>
+                <th>Kup/sprzedaj ETF</th>
+              </tr>
+            </thead>
+            <tbody id="leveraged-results"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="rebalance-table-wrap">
+        <table class="rebalance-table">
+          <thead>
+            <tr>
+              <th>Aktywo</th>
+              <th>Obecnie</th>
+              <th>Obecny %</th>
+              <th>Cel %</th>
+              <th>Cel kwota</th>
+              <th>Transakcja</th>
+            </tr>
+          </thead>
+          <tbody id="rebalance-results"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="report-index" aria-label="Indeks raportow">
+      <div class="report-group">
+        <h3>Podsumowania</h3>
+        <ul class="report-list">
+          <li>
+            <a href="reports/summary.html">Glowne podsumowanie</a>
+            <span>Czytelna podstrona z wnioskami, metrykami, aktualna alokacja i linkami do raportow.</span>
+          </li>
+          <li>
+            <a href="README.md">Opis strategii</a>
+            <span>Pelny opis zasad: Shiller, cykl makro, P/E, SPX/NDX, zloto i rebalancing.</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="report-group">
+        <h3>Wykresy</h3>
+        <ul class="report-list">
+          <li>
+            <a href="reports/equity_curve_100.svg">Kapital i drawdown</a>
+            <span>Wzrost inwestycji 100 USD oraz obsuniecia strategii, rekomendowanego miksu i benchmarkow w skali liniowej.</span>
+          </li>
+          <li>
+            <a href="reports/equity_curve_100_log.svg">Kapital i drawdown log</a>
+            <span>Wzrost inwestycji 100 USD w skali logarytmicznej oraz drawdown.</span>
+          </li>
+          <li>
+            <a href="reports/allocation_percent.svg">Alokacja akcji</a>
+            <span>Udzial akcji w strategii kontra 100%, 80/20 i 60/40, z SPX w tle.</span>
+          </li>
+          <li>
+            <a href="reports/rates_vs_unemployment.svg">Fed Funds vs bezrobocie</a>
+            <span>Glowny sygnal defensywny cyklu makro, z SPX w tle.</span>
+          </li>
+          <li>
+            <a href="reports/pe_hysteresis_path.svg">Histereza P/E</a>
+            <span>Sciezka modulu Forward P/E po rownoleglych liniach histerezy.</span>
+          </li>
+          <li>
+            <a href="reports/spx_ndx_mix.svg">SPX vs NDX</a>
+            <span>Jedna linia 0-100%: udzial NDX w czesci akcyjnej, gdzie reszta to SPX.</span>
+          </li>
+          <li>
+            <a href="reports/gold_allocation.svg">Zloto</a>
+            <span>Udzial zlota w portfelu na tle indeksu ceny zlota.</span>
+          </li>
+          <li>
+            <a href="reports/oil_allocation.svg">Ropa</a>
+            <span>Sygnał ropy na tle ceny WTI; filtr ogranicza obligacje 30+, ale nie kupuje ropy.</span>
+          </li>
+          <li>
+            <a href="reports/bond_allocation_macro.svg">Obligacje vs makro</a>
+            <span>Jedna linia 0-100%: udzial obligacji 30+ w czesci defensywnej, gdzie reszta to floating/gotowka.</span>
+          </li>
+          <li>
+            <a href="reports/leverage_mode.svg">Tryb lewarowany</a>
+            <span>Ekspozycja akcyjna wariantow strategii oraz okresy aktywacji lewara na tle S&amp;P 500.</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="report-group">
+        <h3>Tabele i transakcje</h3>
+        <ul class="report-list">
+          <li>
+            <a href="reports/yearly_allocation_mix.html">Roczna alokacja</a>
+            <span>Srednie roczne proporcje strategii bazowej oraz ekspozycja akcyjna rekomendowanego miksu i wariantow agresywnych.</span>
+          </li>
+          <li>
+            <a href="reports/annual_heatmap.html">Heatmapa roczna</a>
+            <span>Roczne stopy zwrotu i roczne max drawdown dla strategii, rekomendowanego miksu, wariantow agresywnych i benchmarkow.</span>
+          </li>
+          <li>
+            <a href="reports/decade_comparison.html">Porownanie dekadowe</a>
+            <span>CAGR, zwrot laczny, max drawdown, zmiennosc i Sharpe dla kazdej dekady, razem z rekomendowanym miksem.</span>
+          </li>
+          <li>
+            <a href="reports/underwater_duration.html">Czas na stracie</a>
+            <span>Jak dlugo strategia, rekomendowany miks, warianty agresywne i benchmarki byly ponizej poprzedniego szczytu kapitalu.</span>
+          </li>
+          <li>
+            <a href="reports/strategy_mix_report.html">Miksy wariantow</a>
+            <span>Porownanie stalych proporcji strategii bazowej, srednio agresywnej i agresywnej; rekomendowany miks to 30/70/0.</span>
+          </li>
+          <li>
+            <a href="reports/transactions_rebalancing.html">Transakcje i rebalancing</a>
+            <span>Lista rebalancingow po progu 5 p.p. oraz szczegoly kupna i sprzedazy.</span>
+          </li>
+          <li>
+            <a href="reports/bond_switches.html">Przejscia obligacji</a>
+            <span>Daty przejsc miedzy obligacjami 30+ i zmiennoprocentowymi/gotowka.</span>
+          </li>
+          <li>
+            <a href="reports/weekly_backtest.csv">Pelny panel CSV</a>
+            <span>Tygodniowe dane, sygnaly, wagi, stopy zwrotu i benchmarki.</span>
+          </li>
+          <li>
+            <a href="reports/metrics.csv">Metryki CSV</a>
+            <span>CAGR, zmiennosc, Sharpe, max drawdown i koncowa wartosc.</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>Fed Funds vs bezrobocie na tle S&amp;P 500</h2>
+      <p class="chart-note">Pokazuje momenty przecięcia stop i bezrobocia od gory, czyli mocny sygnal wyjscia z akcji.</p>
+      <img src="reports/rates_vs_unemployment.svg" alt="Fed Funds vs bezrobocie na tle S&P 500">
+    </section>
+
+    <section>
+      <h2>Udzial akcji w portfelu na tle S&amp;P 500</h2>
+      <p class="chart-note">Porownuje zmienny udzial akcji w strategii ze stalymi benchmarkami 100%, 80/20 i 60/40.</p>
+      <img src="reports/allocation_percent.svg" alt="Udzial akcji w portfelu na tle S&P 500">
+    </section>
+
+    <section>
+      <h2>Proporcja SPX vs NDX w czesci akcyjnej</h2>
+      <p class="chart-note">Jedna linia pokazuje udzial NDX w czesci akcyjnej: 0% oznacza sam SPX, 50% oznacza 50/50, 100% oznacza sam NDX.</p>
+      <img src="reports/spx_ndx_mix.svg" alt="Proporcja SPX vs NDX w czesci akcyjnej">
+    </section>
+
+    <section>
+      <h2>Udzial zlota w portfelu</h2>
+      <p class="chart-note">Pokazuje okresy aktywnego zlota i indeks ceny zlota w tle.</p>
+      <img src="reports/gold_allocation.svg" alt="Udzial zlota w portfelu">
+    </section>
+
+    <section>
+      <h2>Sygnał ropy</h2>
+      <p class="chart-note">Ropa jest uzywana jako filtr makro: przy aktywnym oil_regime strategia ogranicza agresywne wejscie w obligacje 30+ i preferuje floating/gotowke.</p>
+      <img src="reports/oil_allocation.svg" alt="Sygnał ropy na tle ceny WTI">
+    </section>
+
+    <section>
+      <h2>Proporcja obligacji 30+ vs zmiennoprocentowe</h2>
+      <p class="chart-note">Jedna linia pokazuje udzial obligacji 30+ w czesci defensywnej: 0% oznacza floating/gotowke, 50% oznacza 50/50, 100% oznacza same 30+.</p>
+      <img src="reports/bond_allocation_macro.svg" alt="Proporcja obligacji 30+ vs zmiennoprocentowe">
+    </section>
+
+    <section>
+      <h2>Aktywacja trybu lewarowanego</h2>
+      <p class="chart-note">Pokazuje ekspozycje akcyjna strategii bazowej, rekomendowanego miksu oraz wariantow agresywnych. Tlo oznacza okresy, gdy rekomendowany miks przekracza 100% ekspozycji.</p>
+      <img src="reports/leverage_mode.svg" alt="Aktywacja trybu lewarowanego">
+    </section>
+
+    <section>
+      <h2>Kapital od 100 USD i drawdown</h2>
+      <p class="chart-note">Pokazuje wybrana strategie oraz benchmarki. Skala przelicza sie po zmianie strategii na gorze strony.</p>
+      <div class="equity-dynamic-chart" id="equity-chart-linear" role="img" aria-label="Kapital od 100 USD i drawdown"></div>
+    </section>
+
+    <section>
+      <h2>Kapital od 100 USD i drawdown - skala log</h2>
+      <p class="chart-note">Ten sam widok dla wybranej strategii oraz benchmarkow, ale z kapitalem w skali logarytmicznej.</p>
+      <div class="equity-dynamic-chart" id="equity-chart-log" role="img" aria-label="Kapital od 100 USD i drawdown w skali logarytmicznej"></div>
+    </section>
+
+    <section>
+      <h2>Histereza P/E</h2>
+      <p class="chart-note">Pokazuje, jak modul Forward P/E porusza sie po petli histerezy i zmienia udzial akcji.</p>
+      <img src="reports/pe_hysteresis_path.svg" alt="Histereza P/E">
+    </section>
+  </main>
+  <script>
+    (function () {
+      const allocation = window.INV_STR_LATEST_ALLOCATION || {
+        date: "brak danych",
+        weights: {
+          us_equity: 0,
+          world_equity: 0,
+          tech_equity: 0,
+          fixed_bond: 0,
+          long_bond: 0,
+          floating_bond: 0,
+          gold: 0
+        },
+        strategies: {},
+        labels: {
+          us_equity: "SPX / akcje USA",
+          world_equity: "Akcje swiat",
+          tech_equity: "NDX / tech",
+          fixed_bond: "Obligacje stale",
+          long_bond: "Obligacje 30+",
+          floating_bond: "Floating / gotowka",
+          gold: "Zloto"
+        }
+      };
+      const inputRows = [
+        {
+          key: "pl_stocks",
+          label: "Akcje polskie (PLN)",
+          group: "stocks"
+        },
+        {
+          key: "foreign_stocks",
+          label: "Akcje zagraniczne (PLN)",
+          group: "stocks"
+        },
+        {
+          key: "pl_nominal",
+          label: "Polskie obligacje nominalne",
+          group: "pl_nominal"
+        },
+        {
+          key: "pl_fixed",
+          label: "Polskie obligacje stale %",
+          group: "pl_fixed"
+        },
+        {
+          key: "pl_float",
+          label: "Polskie obligacje zmienne %",
+          group: "pl_float"
+        },
+        {
+          key: "foreign_fixed",
+          label: "Zagraniczne obligacje stale %",
+          group: "foreign_fixed"
+        },
+        {
+          key: "foreign_float",
+          label: "Zagraniczne obligacje zmienne %",
+          group: "foreign_float"
+        },
+        {
+          key: "gold",
+          label: "Zloto",
+          group: "gold"
+        }
+      ];
+      const resultRows = [
+        { key: "stocks", label: "Akcje / ETF-y akcyjne - wartosc gotowkowa" },
+        { key: "pl_nominal", label: "Polskie obligacje nominalne" },
+        { key: "pl_fixed", label: "Polskie obligacje stale %" },
+        { key: "pl_float", label: "Polskie obligacje zmienne %" },
+        { key: "foreign_fixed", label: "Zagraniczne obligacje stale %" },
+        { key: "foreign_float", label: "Zagraniczne obligacje zmienne %" },
+        { key: "gold", label: "Zloto" }
+      ];
+      const leveragedRows = [
+        { key: "broad_1x", sleeve: "broad", label: "SPX/ACWI szeroki rynek 1x", leverage: 1 },
+        { key: "broad_2x", sleeve: "broad", label: "SPX/ACWI szeroki rynek 2x", leverage: 2 },
+        { key: "broad_3x", sleeve: "broad", label: "SPX/ACWI szeroki rynek 3x", leverage: 3 },
+        { key: "ndx_1x", sleeve: "ndx", label: "NDX / tech 1x", leverage: 1 },
+        { key: "ndx_2x", sleeve: "ndx", label: "NDX / tech 2x", leverage: 2 },
+        { key: "ndx_3x", sleeve: "ndx", label: "NDX / tech 3x", leverage: 3 }
+      ];
+      const storageKey = "invStrManualPortfolio.v4";
+      const rebalanceThreshold = 0.05;
+      const inputsEl = document.getElementById("rebalance-inputs");
+      const resultsEl = document.getElementById("rebalance-results");
+      const leveragedInputsEl = document.getElementById("leveraged-inputs");
+      const leveragedResultsEl = document.getElementById("leveraged-results");
+      const leveragedSummaryEl = document.getElementById("leveraged-summary");
+      const totalEl = document.getElementById("rebalance-total");
+      const dateEl = document.getElementById("rebalance-target-date");
+      const manualTotalEl = document.getElementById("rebalance-manual-total");
+      const strategySelectEl = document.getElementById("rebalance-strategy-select");
+      const lockFixedEl = document.getElementById("rebalance-lock-fixed");
+      const currencyCurrentPieEl = document.getElementById("currency-pie-current");
+      const currencyTargetPieEl = document.getElementById("currency-pie-target");
+      const currencyCurrentPlnEl = document.getElementById("currency-current-pln");
+      const currencyCurrentForeignEl = document.getElementById("currency-current-foreign");
+      const currencyTargetPlnEl = document.getElementById("currency-target-pln");
+      const currencyTargetForeignEl = document.getElementById("currency-target-foreign");
+      const allocationChartEl = document.getElementById("allocation-compare-chart");
+      const leverageWarningEl = document.getElementById("leverage-warning");
+      const leverageWarningTextEl = document.getElementById("leverage-warning-text");
+      const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
+      const strategyLabels = {
+        strategy: "Strategia bazowa",
+        strategy_recommended_mix: "Rekomendowany miks 30/70/0",
+        strategy_medium_aggressive: "Strategia srednio agresywna",
+        strategy_aggressive: "Strategia agresywna"
+      };
+      const equityCurveData = window.INV_STR_EQUITY_CURVES || null;
+      const equityLinearEl = document.getElementById("equity-chart-linear");
+      const equityLogEl = document.getElementById("equity-chart-log");
+      const benchmarkSeries = ["benchmark_100_equity", "benchmark_80_20", "benchmark_60_40"];
+      const equityColors = {
+        strategy: "#073b3a",
+        strategy_recommended_mix: "#073b3a",
+        strategy_medium_aggressive: "#073b3a",
+        strategy_aggressive: "#073b3a",
+        benchmark_100_equity: "#b9b5cf",
+        benchmark_80_20: "#c6c0ad",
+        benchmark_60_40: "#d3cbc0"
+      };
+
+      function parseAmount(value) {
+        const normalized = String(value || "")
+          .replace(/\s/g, "")
+          .replace(",", ".")
+          .replace(/[^\d.-]/g, "");
+        const amount = Number(normalized);
+        return Number.isFinite(amount) ? amount : 0;
+      }
+
+      function money(value) {
+        return value.toLocaleString("pl-PL", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      }
+
+      function pct(value) {
+        return (value * 100).toLocaleString("pl-PL", {
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1
+        }) + "%";
+      }
+
+      function compactMoney(value) {
+        if (value >= 1000000) {
+          return "$" + (value / 1000000).toLocaleString("pl-PL", { maximumFractionDigits: 1 }) + "M";
+        }
+        if (value >= 1000) {
+          return "$" + (value / 1000).toLocaleString("pl-PL", { maximumFractionDigits: 0 }) + "k";
+        }
+        return "$" + value.toLocaleString("pl-PL", { maximumFractionDigits: 0 });
+      }
+
+      function svgPolyline(values, xForIndex, yForValue) {
+        const points = [];
+        for (let i = 0; i < values.length; i += 1) {
+          const value = Number(values[i]);
+          if (Number.isFinite(value)) {
+            points.push(xForIndex(i).toFixed(2) + "," + yForValue(value).toFixed(2));
+          }
+        }
+        return points.join(" ");
+      }
+
+      function drawEquityChart(targetEl, logScale) {
+        if (!targetEl || !equityCurveData || !equityCurveData.dates) {
+          return;
+        }
+        const selected = selectedStrategyPayload();
+        const selectedKey = selected.key || "strategy_recommended_mix";
+        const series = [selectedKey].concat(benchmarkSeries);
+        const dates = equityCurveData.dates;
+        const width = 1280;
+        const height = 720;
+        const left = 86;
+        const right = 42;
+        const top = 58;
+        const bottom = 62;
+        const equityHeight = 430;
+        const gap = 54;
+        const ddTop = top + equityHeight + gap;
+        const ddHeight = height - ddTop - bottom;
+        const plotWidth = width - left - right;
+        const xForIndex = function (index) {
+          return left + (dates.length <= 1 ? 0 : index / (dates.length - 1) * plotWidth);
+        };
+        const allEquity = [];
+        const allDrawdown = [];
+        for (const key of series) {
+          allEquity.push(...(equityCurveData.equity[key] || []));
+          allDrawdown.push(...(equityCurveData.drawdown[key] || []));
+        }
+        const maxEquity = Math.max(110, ...allEquity.map(Number).filter(Number.isFinite));
+        const minEquity = Math.max(1, Math.min(100, ...allEquity.map(Number).filter(Number.isFinite)));
+        const yMax = logScale ? maxEquity * 1.08 : Math.ceil(maxEquity / 100) * 100;
+        const yMin = logScale ? minEquity : 0;
+        const ddMin = Math.min(-0.05, ...allDrawdown.map(Number).filter(Number.isFinite));
+        const ddFloor = Math.floor(ddMin * 10) / 10;
+        const yEquity = function (value) {
+          if (logScale) {
+            const minLog = Math.log10(yMin);
+            const maxLog = Math.log10(yMax);
+            return top + equityHeight - (Math.log10(Math.max(value, yMin)) - minLog) / (maxLog - minLog) * equityHeight;
+          }
+          return top + equityHeight - (value / yMax) * equityHeight;
+        };
+        const yDrawdown = function (value) {
+          return ddTop + (value / ddFloor) * ddHeight;
+        };
+        const yearTicks = [];
+        const firstYear = Number(String(dates[0]).slice(0, 4));
+        const lastYear = Number(String(dates[dates.length - 1]).slice(0, 4));
+        for (let year = Math.ceil(firstYear / 10) * 10; year <= lastYear; year += 10) {
+          const index = dates.findIndex(function (date) { return String(date).slice(0, 4) >= String(year); });
+          if (index >= 0) {
+            yearTicks.push({ year: year, x: xForIndex(index) });
+          }
+        }
+        const yTicks = logScale
+          ? Array.from({ length: Math.ceil(Math.log10(yMax)) - Math.floor(Math.log10(yMin)) + 1 }, function (_, index) {
+            return Math.pow(10, Math.floor(Math.log10(yMin)) + index);
+          }).filter(function (value) { return value >= yMin && value <= yMax; })
+          : [0, 0.25, 0.5, 0.75, 1].map(function (part) { return yMax * part; });
+        let svg = "";
+        svg += "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 " + width + " " + height + "\">";
+        svg += "<rect width=\"100%\" height=\"100%\" fill=\"#fff\"/>";
+        svg += "<text x=\"" + left + "\" y=\"30\" font-size=\"22\" font-weight=\"700\" fill=\"#222\">Kapital od 100 USD i drawdown" + (logScale ? " - skala log" : "") + "</text>";
+        svg += "<text x=\"" + left + "\" y=\"51\" font-size=\"13\" fill=\"#666\">Wybrana strategia: " + (equityCurveData.labels[selectedKey] || selected.label) + "</text>";
+        for (const tick of yTicks) {
+          const y = yEquity(tick);
+          svg += "<line x1=\"" + left + "\" y1=\"" + y.toFixed(2) + "\" x2=\"" + (left + plotWidth) + "\" y2=\"" + y.toFixed(2) + "\" stroke=\"#ebe6dd\"/>";
+          svg += "<text x=\"" + (left - 10) + "\" y=\"" + (y + 4).toFixed(2) + "\" text-anchor=\"end\" font-size=\"12\" fill=\"#555\">" + compactMoney(tick) + "</text>";
+        }
+        for (const tick of yearTicks) {
+          svg += "<line x1=\"" + tick.x.toFixed(2) + "\" y1=\"" + top + "\" x2=\"" + tick.x.toFixed(2) + "\" y2=\"" + (ddTop + ddHeight) + "\" stroke=\"#f1eee6\"/>";
+          svg += "<text x=\"" + tick.x.toFixed(2) + "\" y=\"" + (height - 24) + "\" text-anchor=\"middle\" font-size=\"12\" fill=\"#555\">" + tick.year + "</text>";
+        }
+        svg += "<line x1=\"" + left + "\" y1=\"" + top + "\" x2=\"" + left + "\" y2=\"" + (top + equityHeight) + "\" stroke=\"#333\"/>";
+        svg += "<line x1=\"" + left + "\" y1=\"" + (top + equityHeight) + "\" x2=\"" + (left + plotWidth) + "\" y2=\"" + (top + equityHeight) + "\" stroke=\"#333\"/>";
+        svg += "<text x=\"" + left + "\" y=\"" + (ddTop - 16) + "\" font-size=\"13\" fill=\"#555\">Drawdown od poprzedniego szczytu</text>";
+        for (let value = 0; value >= ddFloor - 0.001; value -= 0.1) {
+          const y = yDrawdown(value);
+          svg += "<line x1=\"" + left + "\" y1=\"" + y.toFixed(2) + "\" x2=\"" + (left + plotWidth) + "\" y2=\"" + y.toFixed(2) + "\" stroke=\"#ebe6dd\"/>";
+          svg += "<text x=\"" + (left - 10) + "\" y=\"" + (y + 4).toFixed(2) + "\" text-anchor=\"end\" font-size=\"12\" fill=\"#555\">" + pct(value) + "</text>";
+        }
+        svg += "<line x1=\"" + left + "\" y1=\"" + ddTop + "\" x2=\"" + left + "\" y2=\"" + (ddTop + ddHeight) + "\" stroke=\"#333\"/>";
+        svg += "<line x1=\"" + left + "\" y1=\"" + ddTop + "\" x2=\"" + (left + plotWidth) + "\" y2=\"" + ddTop + "\" stroke=\"#333\"/>";
+        for (const key of series.slice().reverse()) {
+          const isSelected = key === selectedKey;
+          const equity = equityCurveData.equity[key] || [];
+          const drawdown = equityCurveData.drawdown[key] || [];
+          const color = equityColors[key] || "#aaa";
+          const widthLine = isSelected ? 4 : 2.1;
+          const opacity = isSelected ? 1 : 0.58;
+          svg += "<polyline fill=\"none\" stroke=\"" + color + "\" stroke-width=\"" + widthLine + "\" opacity=\"" + opacity + "\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"" + svgPolyline(equity, xForIndex, yEquity) + "\"/>";
+          svg += "<polyline fill=\"none\" stroke=\"" + color + "\" stroke-width=\"" + (isSelected ? 2.8 : 1.6) + "\" opacity=\"" + opacity + "\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"" + svgPolyline(drawdown, xForIndex, yDrawdown) + "\"/>";
+        }
+        const legendX = left + 18;
+        let legendY = top + 24;
+        for (const key of series) {
+          const isSelected = key === selectedKey;
+          const color = equityColors[key] || "#aaa";
+          const label = equityCurveData.labels[key] || key;
+          const finalValue = Number((equityCurveData.equity[key] || []).slice(-1)[0] || 0);
+          svg += "<line x1=\"" + legendX + "\" y1=\"" + legendY + "\" x2=\"" + (legendX + 34) + "\" y2=\"" + legendY + "\" stroke=\"" + color + "\" stroke-width=\"" + (isSelected ? 4 : 3) + "\" opacity=\"" + (isSelected ? 1 : 0.58) + "\"/>";
+          svg += "<text x=\"" + (legendX + 44) + "\" y=\"" + (legendY + 5) + "\" font-size=\"13\" fill=\"#333\">" + label + ": " + compactMoney(finalValue) + "</text>";
+          legendY += 22;
+        }
+        svg += "</svg>";
+        targetEl.innerHTML = svg;
+      }
+
+      function updateEquityCharts() {
+        drawEquityChart(equityLinearEl, false);
+        drawEquityChart(equityLogEl, true);
+      }
+
+      function readCurrent() {
+        const values = {};
+        const manualTotal = parseAmount(manualTotalEl ? manualTotalEl.value : 0);
+        const raw = {};
+        for (const row of inputRows) {
+          const amountInput = document.getElementById("rebalance-" + row.key + "-amount");
+          const pctInput = document.getElementById("rebalance-" + row.key + "-pct");
+          const amountText = amountInput ? amountInput.value : "";
+          const pctText = pctInput ? pctInput.value : "";
+          const amount = parseAmount(amountText);
+          const pctValue = parseAmount(pctText) / 100.0;
+          raw[row.key] = { amount: amountText, pct: pctText };
+          values[row.key] = amount > 0 ? amount : manualTotal > 0 && pctValue > 0 ? manualTotal * pctValue : 0;
+        }
+        const leveragedRaw = {};
+        for (const row of leveragedRows) {
+          const input = document.getElementById("leveraged-" + row.key);
+          leveragedRaw[row.key] = input ? input.value : "";
+        }
+        localStorage.setItem(storageKey, JSON.stringify({
+          total: manualTotalEl ? manualTotalEl.value : "",
+          strategy: strategySelectEl ? strategySelectEl.value : "strategy_recommended_mix",
+          lockFixed: lockFixedEl ? lockFixedEl.checked : true,
+          rows: raw,
+          leveragedRows: leveragedRaw
+        }));
+        return { values: values, manualTotal: manualTotal };
+      }
+
+      function readLeveragedPositions() {
+        const positions = {};
+        for (const row of leveragedRows) {
+          const input = document.getElementById("leveraged-" + row.key);
+          positions[row.key] = parseAmount(input ? input.value : 0);
+        }
+        return positions;
+      }
+
+      function selectedStrategyPayload() {
+        const key = strategySelectEl ? strategySelectEl.value : "strategy_recommended_mix";
+        const strategies = allocation.strategies || {};
+        const payload = strategies[key] || {
+          label: strategyLabels[key] || "Strategia bazowa",
+          weights: allocation.weights || {}
+        };
+        return {
+          key: key,
+          label: payload.label || strategyLabels[key] || key,
+          weights: payload.weights || allocation.weights || {}
+        };
+      }
+
+      function updateStrategyDate() {
+        const selected = selectedStrategyPayload();
+        const weights = selected.weights || {};
+        const totalExposure = Object.keys(weights).reduce(function (sum, key) {
+          return sum + Number(weights[key] || 0);
+        }, 0);
+        const equityExposure = Number(weights.us_equity || 0) +
+          Number(weights.world_equity || 0) +
+          Number(weights.tech_equity || 0);
+        const financing = Math.max(0, totalExposure - 1);
+        const leverageText = totalExposure > 1.01 ? " | ekspozycja brutto " + pct(totalExposure) : "";
+        dateEl.textContent = "Docelowa alokacja: " + allocation.date + " | " + selected.label + leverageText;
+        if (leverageWarningEl && leverageWarningTextEl) {
+          const leverageActive = totalExposure > 1.01 || equityExposure > 1.01;
+          leverageWarningEl.hidden = !leverageActive;
+          if (leverageActive) {
+            leverageWarningTextEl.textContent =
+              selected.label + " ma obecnie docelowa ekspozycje brutto " + pct(totalExposure) +
+              ", w tym akcje " + pct(equityExposure) + ". To oznacza ok. " + pct(financing) +
+              " finansowania/lewara ponad kapital wlasny. Glowna tabela rebalancingu pokazuje wartosc gotowkowa ETF-ow, a tabela 1x/2x/3x pokazuje ekspozycje rynkowa.";
+          }
+        }
+      }
+
+      function targetWeights(current) {
+        const selected = selectedStrategyPayload();
+        const sourceWeights = selected.weights || {};
+        const broadExposure = Number(sourceWeights.us_equity || 0) + Number(sourceWeights.world_equity || 0);
+        const ndxExposure = Number(sourceWeights.tech_equity || 0);
+        const broadCashTarget = broadExposure / preferredLeverage(broadExposure);
+        const ndxCashTarget = ndxExposure / preferredLeverage(ndxExposure);
+        const equityCashTarget = broadCashTarget + ndxCashTarget;
+        const goldTarget = Number(sourceWeights.gold || 0);
+        const longBond = Number(sourceWeights.long_bond || 0) + Number(sourceWeights.fixed_bond || 0);
+        const floatingBond = Number(sourceWeights.floating_bond || 0);
+        const bondTarget = Math.max(0, 1 - equityCashTarget - goldTarget);
+        const durationShare = longBond + floatingBond > 0 ? longBond / (longBond + floatingBond) : 0;
+        const weights = {};
+
+        weights.stocks = equityCashTarget;
+        weights.pl_nominal = bondTarget / 2;
+        weights.pl_fixed = (bondTarget / 4) * durationShare;
+        weights.pl_float = (bondTarget / 4) * (1 - durationShare);
+        weights.foreign_fixed = (bondTarget / 4) * durationShare;
+        weights.foreign_float = (bondTarget / 4) * (1 - durationShare);
+        weights.gold = goldTarget;
+        return weights;
+      }
+
+      function targetEquitySleeves() {
+        const selected = selectedStrategyPayload();
+        const sourceWeights = selected.weights || {};
+        return {
+          broad: Number(sourceWeights.us_equity || 0) + Number(sourceWeights.world_equity || 0),
+          ndx: Number(sourceWeights.tech_equity || 0)
+        };
+      }
+
+      function preferredLeverage(targetExposureWeight) {
+        if (targetExposureWeight <= 1.0001) {
+          return 1;
+        }
+        if (targetExposureWeight <= 2.0001) {
+          return 2;
+        }
+        return 3;
+      }
+
+      function adjustedTargetsForLocks(targets, display, total) {
+        if (!lockFixedEl || !lockFixedEl.checked || total <= 0) {
+          return targets;
+        }
+        const adjusted = Object.assign({}, targets);
+        const lockedKeys = ["pl_fixed", "foreign_fixed"].filter(function (key) {
+          const currentWeight = Number(display[key] || 0) / total;
+          return currentWeight > Number(targets[key] || 0);
+        });
+        if (!lockedKeys.length) {
+          return adjusted;
+        }
+        const lockedWeight = lockedKeys.reduce(function (sum, key) {
+          return sum + Number(display[key] || 0) / total;
+        }, 0);
+        const unlockedKeys = Object.keys(adjusted).filter(function (key) {
+          return lockedKeys.indexOf(key) < 0;
+        });
+        const desiredUnlockedWeight = unlockedKeys.reduce(function (sum, key) {
+          return sum + Number(targets[key] || 0);
+        }, 0);
+        const remainingWeight = Math.max(0, 1 - lockedWeight);
+        const scale = desiredUnlockedWeight > 0 ? remainingWeight / desiredUnlockedWeight : 0;
+        for (const key of lockedKeys) {
+          adjusted[key] = Number(display[key] || 0) / total;
+        }
+        for (const key of unlockedKeys) {
+          adjusted[key] = Number(targets[key] || 0) * scale;
+        }
+        return adjusted;
+      }
+
+      function equityCashTargetWeightFromSleeves(sleeves) {
+        return Number(sleeves.broad || 0) / preferredLeverage(Number(sleeves.broad || 0)) +
+          Number(sleeves.ndx || 0) / preferredLeverage(Number(sleeves.ndx || 0));
+      }
+
+      function updateLeveragedRebalance(total, stockCashTargetWeight, display) {
+        if (!leveragedResultsEl || !leveragedSummaryEl) {
+          return;
+        }
+        const sleeves = targetEquitySleeves();
+        const originalEquityCashWeight = equityCashTargetWeightFromSleeves(sleeves);
+        const targetScale = originalEquityCashWeight > 0
+          ? Math.min(1, Math.max(0, Number(stockCashTargetWeight || 0) / originalEquityCashWeight))
+          : 0;
+        const scaledSleeves = {
+          broad: Number(sleeves.broad || 0) * targetScale,
+          ndx: Number(sleeves.ndx || 0) * targetScale
+        };
+        const positions = readLeveragedPositions();
+        const targetsByKey = {};
+        const chosen = {
+          broad: preferredLeverage(scaledSleeves.broad),
+          ndx: preferredLeverage(scaledSleeves.ndx)
+        };
+        for (const row of leveragedRows) {
+          const exposureWeight = Number(scaledSleeves[row.sleeve] || 0);
+          const chosenLeverage = chosen[row.sleeve];
+          targetsByKey[row.key] = row.leverage === chosenLeverage && exposureWeight > 0
+            ? total * exposureWeight / row.leverage
+            : 0;
+        }
+        const explicitLeveragedCash = leveragedRows.reduce(function (sum, row) {
+          return sum + Number(positions[row.key] || 0);
+        }, 0);
+        const targetLeveragedCash = leveragedRows.reduce(function (sum, row) {
+          return sum + Number(targetsByKey[row.key] || 0);
+        }, 0);
+        const currentByKey = Object.assign({}, positions);
+        const stockCurrentCash = Number(display && display.stocks || 0);
+        const stockTargetCash = total * Number(stockCashTargetWeight || 0);
+        const stockTradeCash = stockTargetCash - stockCurrentCash;
+        let currentSourceText = "z wpisanych ETF-ow";
+        if (explicitLeveragedCash <= 0.005 && Number(display && display.stocks || 0) > 0 && targetLeveragedCash > 0) {
+          currentSourceText = "z obecnej puli Akcje; transakcje nizej rozbijaja tylko brakujacy zakup/sprzedaz";
+          for (const row of leveragedRows) {
+            currentByKey[row.key] = Number(display.stocks || 0) * Number(targetsByKey[row.key] || 0) / targetLeveragedCash;
+          }
+        }
+
+        const currentBroadExposure = leveragedRows
+          .filter(function (row) { return row.sleeve === "broad"; })
+          .reduce(function (sum, row) { return sum + Number(currentByKey[row.key] || 0) * row.leverage; }, 0);
+        const currentNdxExposure = leveragedRows
+          .filter(function (row) { return row.sleeve === "ndx"; })
+          .reduce(function (sum, row) { return sum + Number(currentByKey[row.key] || 0) * row.leverage; }, 0);
+        const targetBroadExposure = total * Number(scaledSleeves.broad || 0);
+        const targetNdxExposure = total * Number(scaledSleeves.ndx || 0);
+        leveragedSummaryEl.textContent =
+          "Docelowa ekspozycja: szeroki rynek " + pct(scaledSleeves.broad) +
+          ", NDX/tech " + pct(scaledSleeves.ndx) +
+          " | obecnie " + currentSourceText + ": szeroki rynek " + pct(total > 0 ? currentBroadExposure / total : 0) +
+          ", NDX/tech " + pct(total > 0 ? currentNdxExposure / total : 0);
+
+        leveragedResultsEl.innerHTML = "";
+        for (const row of leveragedRows) {
+          const currentAmount = Number(currentByKey[row.key] || 0);
+          const currentExposure = currentAmount * row.leverage;
+          const targetAmount = Number(targetsByKey[row.key] || 0);
+          const targetExposure = targetAmount * row.leverage;
+          const targetCashShare = targetLeveragedCash > 0 ? targetAmount / targetLeveragedCash : 0;
+          const inferredTradeDelta = explicitLeveragedCash <= 0.005
+            ? stockTradeCash * targetCashShare
+            : targetAmount - currentAmount;
+          const exposureDelta = inferredTradeDelta * row.leverage;
+          const sleeveTargetExposure = row.sleeve === "broad" ? targetBroadExposure : targetNdxExposure;
+          const sleeveCurrentExposure = row.sleeve === "broad" ? currentBroadExposure : currentNdxExposure;
+          const belowThreshold = total <= 0 || Math.abs(stockTradeCash) / total < rebalanceThreshold;
+          const delta = inferredTradeDelta;
+          const tradeClass = belowThreshold ? "trade-hold" : delta > 0 ? "trade-buy" : delta < 0 ? "trade-sell" : "trade-hold";
+          let tradeText = belowThreshold ? "trzymaj (ponizej progu)" : "trzymaj";
+          if (!belowThreshold && Math.abs(delta) > 0.005) {
+            tradeText = (delta > 0 ? "kup " : "sprzedaj ") + money(Math.abs(delta));
+          }
+          const tr = document.createElement("tr");
+          tr.innerHTML =
+            "<td>" + row.label + "</td>" +
+            "<td>" + row.leverage + "x</td>" +
+            "<td>" + money(currentAmount) + "</td>" +
+            "<td>" + money(currentExposure) + " (" + pct(total > 0 ? currentExposure / total : 0) + ")</td>" +
+            "<td>" + money(targetAmount) + "</td>" +
+            "<td>" + money(targetExposure) + " (" + pct(total > 0 ? targetExposure / total : 0) + ")</td>" +
+            "<td>" + (exposureDelta >= 0 ? "+" : "-") + money(Math.abs(exposureDelta)) + "</td>" +
+            "<td class=\"" + tradeClass + "\">" + tradeText + "</td>";
+          leveragedResultsEl.appendChild(tr);
+        }
+      }
+
+      function displayCurrent(current) {
+        return {
+          stocks: (current.pl_stocks || 0) + (current.foreign_stocks || 0),
+          pl_nominal: current.pl_nominal || 0,
+          pl_fixed: current.pl_fixed || 0,
+          pl_float: current.pl_float || 0,
+          foreign_fixed: current.foreign_fixed || 0,
+          foreign_float: current.foreign_float || 0,
+          gold: current.gold || 0
+        };
+      }
+
+      function currencyExposure(current) {
+        const pln = (current.pl_stocks || 0) +
+          (current.pl_nominal || 0) +
+          (current.pl_fixed || 0) +
+          (current.pl_float || 0);
+        const foreign = (current.foreign_stocks || 0) +
+          (current.foreign_fixed || 0) +
+          (current.foreign_float || 0) +
+          (current.gold || 0);
+        return { pln: pln, foreign: foreign };
+      }
+
+      function targetCurrencyExposure(current, targets, total) {
+        const stockTotal = (current.pl_stocks || 0) + (current.foreign_stocks || 0);
+        const plStockShare = stockTotal > 0 ? (current.pl_stocks || 0) / stockTotal : 0;
+        const targetStocks = total * Number(targets.stocks || 0);
+        const pln = targetStocks * plStockShare +
+          total * Number(targets.pl_nominal || 0) +
+          total * Number(targets.pl_fixed || 0) +
+          total * Number(targets.pl_float || 0);
+        const foreign = targetStocks * (1 - plStockShare) +
+          total * Number(targets.foreign_fixed || 0) +
+          total * Number(targets.foreign_float || 0) +
+          total * Number(targets.gold || 0);
+        return { pln: pln, foreign: foreign };
+      }
+
+      function drawCurrencyPie(pieEl, plnEl, foreignEl, exposure, total) {
+        const base = total > 0 ? total : exposure.pln + exposure.foreign;
+        const plnShare = base > 0 ? exposure.pln / base : 0;
+        const foreignShare = base > 0 ? exposure.foreign / base : 0;
+        const plnDegrees = Math.max(0, Math.min(360, plnShare * 360));
+        if (pieEl) {
+          pieEl.style.background = "conic-gradient(#15616d 0deg " + plnDegrees + "deg, #cfc8ba " + plnDegrees + "deg 360deg)";
+        }
+        if (plnEl) {
+          plnEl.textContent = "PLN: " + money(exposure.pln) + " (" + pct(plnShare) + ")";
+        }
+        if (foreignEl) {
+          foreignEl.textContent = "Inne waluty: " + money(exposure.foreign) + " (" + pct(foreignShare) + ")";
+        }
+      }
+
+      function updateCurrencyChart(current, targets, total) {
+        drawCurrencyPie(
+          currencyCurrentPieEl,
+          currencyCurrentPlnEl,
+          currencyCurrentForeignEl,
+          currencyExposure(current),
+          total
+        );
+        drawCurrencyPie(
+          currencyTargetPieEl,
+          currencyTargetPlnEl,
+          currencyTargetForeignEl,
+          targetCurrencyExposure(current, targets, total),
+          total
+        );
+      }
+
+      function updateAllocationChart(display, targets, total) {
+        if (!allocationChartEl) {
+          return;
+        }
+        allocationChartEl.innerHTML = "";
+        const rows = resultRows.map(function (item) {
+          const currentWeight = total > 0 ? (display[item.key] || 0) / total : 0;
+          const targetWeight = Number(targets[item.key] || 0);
+          return {
+            item: item,
+            currentWeight: currentWeight,
+            targetWeight: targetWeight
+          };
+        });
+        const scaleMax = Math.max(0.01, ...rows.map(function (row) {
+          return Math.max(row.currentWeight, row.targetWeight);
+        }));
+
+        for (const rowData of rows) {
+          const row = document.createElement("div");
+          row.className = "allocation-chart-row";
+          const currentWidth = Math.min(100, rowData.currentWeight / scaleMax * 100);
+          const targetLeft = Math.min(100, rowData.targetWeight / scaleMax * 100);
+          row.innerHTML =
+            "<div class=\"allocation-chart-label\">" + rowData.item.label + "</div>" +
+            "<div class=\"allocation-track\">" +
+            "<div class=\"allocation-current\" style=\"width:" + currentWidth.toFixed(2) + "%\"></div>" +
+            "<div class=\"allocation-target\" style=\"left:" + targetLeft.toFixed(2) + "%\"></div>" +
+            "</div>" +
+            "<div class=\"allocation-chart-values\">" + pct(rowData.currentWeight) + " / " + pct(rowData.targetWeight) + "</div>";
+          allocationChartEl.appendChild(row);
+        }
+      }
+
+      function calculate() {
+        updateStrategyDate();
+        updateEquityCharts();
+        const currentState = readCurrent();
+        const current = currentState.values;
+        const display = displayCurrent(current);
+        const baseTargets = targetWeights(current);
+        const enteredTotal = currentState.manualTotal;
+        const amountTotal = inputRows.reduce((sum, row) => sum + current[row.key], 0);
+        const total = enteredTotal > 0 && amountTotal <= enteredTotal * 1.01 ? enteredTotal : amountTotal;
+        const targets = adjustedTargetsForLocks(baseTargets, display, total);
+        resultsEl.innerHTML = "";
+        let suggestedBuys = 0;
+        let suggestedSells = 0;
+        updateCurrencyChart(current, targets, total);
+        updateAllocationChart(display, targets, total);
+        updateLeveragedRebalance(total, Number(targets.stocks || 0), display);
+
+        for (const item of resultRows) {
+          const weight = Number(targets[item.key] || 0);
+          const currentAmount = display[item.key] || 0;
+          const currentWeight = total > 0 ? currentAmount / total : 0;
+          const targetAmount = total * weight;
+          const delta = targetAmount - currentAmount;
+          const absDelta = Math.abs(delta);
+          const belowThreshold = Math.abs(weight - currentWeight) < rebalanceThreshold;
+          const fixedSaleLocked = Boolean(lockFixedEl && lockFixedEl.checked && (item.key === "pl_fixed" || item.key === "foreign_fixed") && delta < 0);
+          const tradeClass = belowThreshold || fixedSaleLocked ? "trade-hold" : delta > 0 ? "trade-buy" : "trade-sell";
+          let tradeText = "trzymaj (ponizej progu)";
+          if (fixedSaleLocked) {
+            tradeText = "trzymaj (teza na duration)";
+          } else if (tradeClass !== "trade-hold") {
+            tradeText = (delta > 0 ? "kup " : "sprzedaj ") + money(absDelta);
+            if (delta > 0) {
+              suggestedBuys += absDelta;
+            } else {
+              suggestedSells += absDelta;
+            }
+          }
+          const row = document.createElement("tr");
+          row.innerHTML =
+            "<td>" + item.label + "</td>" +
+            "<td>" + money(currentAmount) + "</td>" +
+            "<td>" + pct(currentWeight) + "</td>" +
+            "<td>" + pct(weight) + "</td>" +
+            "<td>" + money(targetAmount) + "</td>" +
+            "<td class=\"" + tradeClass + "\">" + tradeText + "</td>";
+          resultsEl.appendChild(row);
+        }
+        totalEl.textContent = "Suma portfela: " + money(total) +
+          " | Sprzedaze: " + money(suggestedSells) +
+          " | Zakupy: " + money(suggestedBuys) +
+          " | Saldo: " + money(suggestedSells - suggestedBuys) +
+          (enteredTotal > 0 && amountTotal > enteredTotal * 1.01 ? " | Uzyto sumy wpisanych pozycji, bo przekracza podana sume portfela." : "");
+      }
+
+      function clearInputs() {
+        if (manualTotalEl) {
+          manualTotalEl.value = "";
+        }
+        for (const row of inputRows) {
+          const amountInput = document.getElementById("rebalance-" + row.key + "-amount");
+          const pctInput = document.getElementById("rebalance-" + row.key + "-pct");
+          if (amountInput) {
+            amountInput.value = "";
+          }
+          if (pctInput) {
+            pctInput.value = "";
+          }
+        }
+        for (const row of leveragedRows) {
+          const input = document.getElementById("leveraged-" + row.key);
+          if (input) {
+            input.value = "";
+          }
+        }
+        if (lockFixedEl) {
+          lockFixedEl.checked = true;
+        }
+        if (strategySelectEl) {
+          strategySelectEl.value = "strategy_recommended_mix";
+        }
+        localStorage.removeItem(storageKey);
+        calculate();
+      }
+
+      if (manualTotalEl) {
+        manualTotalEl.value = saved.total || "";
+      }
+      if (strategySelectEl) {
+        const savedStrategy = saved.strategy || "strategy_recommended_mix";
+        const hasSavedOption = Array.prototype.some.call(strategySelectEl.options, function (option) {
+          return option.value === savedStrategy;
+        });
+        strategySelectEl.value = hasSavedOption ? savedStrategy : "strategy_recommended_mix";
+      }
+      if (lockFixedEl && typeof saved.lockFixed === "boolean") {
+        lockFixedEl.checked = saved.lockFixed;
+      }
+      for (const row of inputRows) {
+        const savedRow = saved.rows && saved.rows[row.key] ? saved.rows[row.key] : {};
+        const field = document.createElement("div");
+        field.className = "rebalance-field";
+        field.innerHTML =
+          "<label>" + row.label + "</label>" +
+          "<div class=\"rebalance-pair\">" +
+          "<input id=\"rebalance-" + row.key + "-amount\" inputmode=\"decimal\" placeholder=\"kwota\" value=\"" + (savedRow.amount || "") + "\">" +
+          "<input id=\"rebalance-" + row.key + "-pct\" inputmode=\"decimal\" placeholder=\"%\" value=\"" + (savedRow.pct || "") + "\">" +
+          "</div>";
+        inputsEl.appendChild(field);
+      }
+      if (leveragedInputsEl) {
+        for (const row of leveragedRows) {
+          const field = document.createElement("div");
+          const savedValue = saved.leveragedRows && saved.leveragedRows[row.key] ? saved.leveragedRows[row.key] : "";
+          field.className = "rebalance-field";
+          field.innerHTML =
+            "<label>" + row.label + "</label>" +
+            "<input id=\"leveraged-" + row.key + "\" inputmode=\"decimal\" placeholder=\"kwota\" value=\"" + savedValue + "\">";
+          leveragedInputsEl.appendChild(field);
+        }
+      }
+
+      inputsEl.addEventListener("input", calculate);
+      if (leveragedInputsEl) {
+        leveragedInputsEl.addEventListener("input", calculate);
+      }
+      if (manualTotalEl) {
+        manualTotalEl.addEventListener("input", calculate);
+      }
+      if (strategySelectEl) {
+        strategySelectEl.addEventListener("change", calculate);
+      }
+      if (lockFixedEl) {
+        lockFixedEl.addEventListener("change", calculate);
+      }
+      document.getElementById("rebalance-calc").addEventListener("click", calculate);
+      document.getElementById("rebalance-clear").addEventListener("click", clearInputs);
+      calculate();
+    })();
+  </script>
+</body>
+</html>

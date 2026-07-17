@@ -1,0 +1,933 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Historia portfela i rebalancing</title>
+  <style>
+    :root {
+      --ink: #202020;
+      --muted: #666;
+      --line: #d8d1c3;
+      --panel: #fff;
+      --bg: #f7f8f5;
+      --accent: #15616d;
+      --warn: #9a5b00;
+    }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    main {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 28px 24px 48px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+    h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+    h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+    }
+    p {
+      margin: 0 0 14px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .top-nav {
+      margin: 0 0 18px;
+      font-size: 14px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+      margin: 18px 0;
+    }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 16px;
+    }
+    .metric {
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .metric small {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-top: 12px;
+    }
+    button, .file-label {
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      background: var(--accent);
+      color: #fff;
+      padding: 9px 12px;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: #fff;
+      color: var(--accent);
+    }
+    button.danger {
+      border-color: #8f2d2d;
+      background: #8f2d2d;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 280px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      border-bottom: 1px solid #ece7dd;
+      padding: 8px 7px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      color: #555;
+      font-size: 12px;
+      font-weight: 700;
+      background: #fbfaf7;
+    }
+    .scroll {
+      max-height: 420px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+    .note {
+      color: var(--warn);
+      font-size: 13px;
+    }
+    .pill {
+      display: inline-block;
+      border: 1px solid #cfc7b8;
+      border-radius: 999px;
+      padding: 2px 8px;
+      color: #555;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    select {
+      max-width: 160px;
+      padding: 4px;
+      border: 1px solid #cfc7b8;
+      border-radius: 4px;
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <nav class="top-nav"><a href="index.html">Strona glowna</a> / Historia portfela i rebalancing</nav>
+    <h1>Historia portfela i rebalancing</h1>
+    <p>Importuje CSV i XLS z rachunkow bankowych oraz maklerskich, zapamietuje rekordy w tej przegladarce i dopisuje tylko nowe operacje. Kwoty sa traktowane jako PLN, chyba ze plik podaje inna walute.</p>
+
+    <section class="panel">
+      <h2>Import plikow</h2>
+      <p>Obslugiwane sa formaty mBank/eMAKLER, IBKR Transaction History, potwierdzenia funduszy, proste historie bankowe oraz XLS stanu rachunku rejestrowego obligacji.</p>
+      <div class="actions">
+        <label class="file-label" for="fileInput">Zaladuj pliki CSV/XLS</label>
+        <input id="fileInput" type="file" accept=".csv,.Csv,.xls,application/vnd.ms-excel,text/csv" multiple>
+        <button class="secondary" id="exportBtn" type="button">Eksportuj scalona historie</button>
+        <button class="danger" id="clearBtn" type="button">Wyczysc lokalna historie</button>
+      </div>
+      <p id="importStatus" class="note"></p>
+    </section>
+
+    <section class="grid" aria-label="Metryki portfela">
+      <div class="panel"><div class="metric" id="balanceMetric">0 PLN<small>Szacowane saldo na podstawie rozpoznanych operacji</small></div></div>
+      <div class="panel"><div class="metric" id="cagrMetric">n/d<small>CAGR z dziennych sald po przeplywach</small></div></div>
+      <div class="panel"><div class="metric" id="ddMetric">n/d<small>Max drawdown salda</small></div></div>
+      <div class="panel"><div class="metric" id="recordsMetric">0<small>Unikalne zaimportowane rekordy</small></div></div>
+    </section>
+
+    <section class="panel">
+      <h2>Saldo i drawdown</h2>
+      <canvas id="historyChart" width="1200" height="320"></canvas>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Aktualna ekspozycja</h2>
+        <div id="exposureTable"></div>
+      </div>
+      <div class="panel">
+        <h2>Wytyczne transakcji</h2>
+        <div id="rebalanceTable"></div>
+        <p class="note">Rekomendacja jest mechaniczna i zalezy od typu operacji oraz rodzaju waloru. Przeksiegowania i blokady sa ignorowane.</p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Operacje</h2>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Opis</th>
+              <th>Symbol</th>
+              <th>Kwota</th>
+              <th>Waluta</th>
+              <th>Typ operacji</th>
+              <th>Rodzaj waloru</th>
+              <th>Zrodlo</th>
+            </tr>
+          </thead>
+          <tbody id="recordsBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "invStrPortfolioRecords.v2";
+    const LEGACY_STORAGE_KEY = "invStrPortfolioRecords.v1";
+    const TARGET = {
+      us_equity: 0.40,
+      world_equity: 0.00,
+      tech_equity: 0.00,
+      long_bond: 0.15,
+      floating_bond: 0.45,
+      gold: 0.00,
+      unknown: 0.00
+    };
+    const SECURITY_LABELS = {
+      us_equity: "Akcje USA / SPX",
+      world_equity: "Akcje swiat",
+      tech_equity: "Tech / NDX",
+      long_bond: "Obligacje 30+",
+      floating_bond: "Floating / gotowka",
+      gold: "Zloto",
+      unknown: "Do klasyfikacji"
+    };
+    const OPERATION_LABELS = {
+      deposit: "Wplata",
+      withdrawal: "Wyplata",
+      buy: "Zakup",
+      sell: "Sprzedaz",
+      dividend_interest: "Dywidenda / odsetki",
+      position_snapshot: "Stan pozycji",
+      transfer_ignore: "Przeksiegowanie / ignoruj",
+      fee_tax: "Oplata / podatek",
+      adjustment: "Korekta",
+      unknown: "Do klasyfikacji"
+    };
+    const CATEGORIES = Object.keys(SECURITY_LABELS);
+    const OPERATION_TYPES = Object.keys(OPERATION_LABELS);
+    let records = loadRecords();
+
+    document.getElementById("fileInput").addEventListener("change", handleFiles);
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      if (!confirm("Wyczyscic lokalnie zapamietana historie?")) return;
+      records = [];
+      saveRecords();
+      render();
+    });
+    document.getElementById("exportBtn").addEventListener("click", exportRecords);
+
+    render();
+
+    async function handleFiles(event) {
+      const files = Array.from(event.target.files || []);
+      let added = 0;
+      let skipped = 0;
+      for (const file of files) {
+        const parsed = await parseFile(file);
+        for (const rec of parsed) {
+          if (records.some(existing => existing.id === rec.id)) {
+            skipped += 1;
+          } else {
+            records.push(rec);
+            added += 1;
+          }
+        }
+      }
+      records.sort((a, b) => a.date.localeCompare(b.date) || a.description.localeCompare(b.description));
+      saveRecords();
+      event.target.value = "";
+      document.getElementById("importStatus").textContent = `Dodano ${added} nowych rekordow, pominieto ${skipped} duplikatow.`;
+      render();
+    }
+
+    async function parseFile(file) {
+      if (/\.xls$/i.test(file.name)) {
+        const buffer = await file.arrayBuffer();
+        return parseXlsWorkbook(buffer, file.name);
+      }
+      const text = await file.text();
+      return parseAnyCsv(text, file.name);
+    }
+
+    function parseAnyCsv(text, source) {
+      const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n").filter(line => line.trim() !== "");
+      if (!lines.length) return [];
+      if (lines.some(line => line.startsWith("Transaction History,Header"))) return parseIbkr(lines, source);
+      const headerIndex = findHeaderIndex(lines);
+      if (headerIndex < 0) return [];
+      const delimiter = detectDelimiter(lines[headerIndex]);
+      const header = parseCsvLine(lines[headerIndex], delimiter).map(normalizeHeader);
+      const rows = lines.slice(headerIndex + 1).map(line => parseCsvLine(line, delimiter));
+      return rows.map(row => rowToRecord(header, row, source)).filter(Boolean);
+    }
+
+    function parseIbkr(lines, source) {
+      const headerLine = lines.find(line => line.startsWith("Transaction History,Header"));
+      if (!headerLine) return [];
+      const header = parseCsvLine(headerLine, ",").slice(2).map(normalizeHeader);
+      return lines
+        .filter(line => line.startsWith("Transaction History,Data"))
+        .map(line => rowToRecord(header, parseCsvLine(line, ",").slice(2), source))
+        .filter(Boolean);
+    }
+
+    function findHeaderIndex(lines) {
+      return lines.findIndex(line => {
+        const normalized = line.toLowerCase();
+        return (
+          normalized.includes("data;") ||
+          normalized.includes("data zlecenia") ||
+          normalized.includes("date,") ||
+          normalized.includes("data,")
+        );
+      });
+    }
+
+    function rowToRecord(header, row, source) {
+      if (!row.length) return null;
+      const obj = {};
+      header.forEach((key, index) => obj[key] = (row[index] || "").trim());
+      const date = parseDateValue(firstValue(obj, ["data", "date", "data_zlecenia", "data_wyceny"]));
+      if (!date) return null;
+      const description = firstValue(obj, ["opis", "description", "tytul_operacji", "tytu_operacji", "szczegoly", "szczego_y", "typ_zlecenia", "transaction_type"]) || "";
+      const type = firstValue(obj, ["typ", "transaction_type", "typ_zlecenia"]) || "";
+      const symbol = firstValue(obj, ["symbol", "fundusz_docelowy", "fundusz_zrodlowy"]) || extractSymbol(description);
+      let amountRaw = firstValue(obj, ["net_amount", "net_amount_", "kwota", "wartosc_pln_transakcji", "warto_pln_transakcji", "wartosc_zlecenia", "warto_zlecenia", "gross_amount"]);
+      if (!amountRaw) amountRaw = lastNumericCell(row);
+      let amount = parseNumber(amountRaw);
+      if (!Number.isFinite(amount)) return null;
+      if (/odkupienie|sell|sprzedaz/i.test(`${description} ${type}`) && amount > 0) amount = -amount;
+      const currency = firstValue(obj, ["waluta", "price_currency"]) || "PLN";
+      const operationType = classifyOperation(`${description} ${type} ${symbol}`, amount);
+      const securityType = classifySecurity(`${description} ${type} ${symbol}`);
+      const id = fingerprint([source, date, description, type, symbol, amount.toFixed(4), currency].join("|"));
+      return { id, date, description: `${type ? type + " - " : ""}${description}`.trim(), symbol, amount, currency, operationType, securityType, source };
+    }
+
+    function classifyOperation(text, amount) {
+      const s = String(text || "").toUpperCase();
+      if (/BLOKADA|ODBLOKOWANIE|MODYFIKACJA|ANULOWANIA|FX TRANSLATIONS/.test(s)) return "transfer_ignore";
+      if (/PRZELEW DO|PRZELEW ŚRODKÓW|PRZELEW SRODKOW|WPŁATA|WPLATA|DEPOSIT/.test(s)) return amount >= 0 ? "deposit" : "withdrawal";
+      if (/WYPŁATA|WYPLATA|WITHDRAWAL/.test(s) && !/DYWIDEND|ODSET/.test(s)) return "withdrawal";
+      if (/DYWIDEND|DIVIDEND|ODSET|INTEREST/.test(s)) return "dividend_interest";
+      if (/PODATEK|TAX|PROWIZJ|COMMISSION|FEE|OPŁAT|OPLAT/.test(s)) return "fee_tax";
+      if (/ODKUPIENIE|SELL|SPRZEDA/.test(s)) return "sell";
+      if (/NABYCIE|BUY|KUPN|ZAKUP/.test(s)) return "buy";
+      if (/ADJUSTMENT|KOREKTA/.test(s)) return "adjustment";
+      return "unknown";
+    }
+
+    function classifySecurity(text) {
+      const s = String(text || "").toUpperCase();
+      if (/(GLD|IAU|SGLN|PHAU|ZLOTO|ZŁOTO|GOLD)/.test(s)) return "gold";
+      if (/(QQQ|NDX|NASDAQ|TECH|EQQQ|CNDX)/.test(s)) return "tech_equity";
+      if (/(IDTL|TLT|EDV|30\\+|20\\+|LONG|IE00BSKRJZ44|FPC0631|FPC1140|EDO|ROD)/.test(s)) return "long_bond";
+      if (/(VWRL|VWCE|VGWL|ALL-WORLD|ALL WORLD|IE00B3RBWM25|AKCJE SWIAT|EMERYTALNY 2045)/.test(s)) return "world_equity";
+      if (/(SPY|VOO|IVV|S&P|SP500|S AND P|USA)/.test(s)) return "us_equity";
+      if (/(PRZELEW|CASH|GOTOW|ODSET|DYWIDEND|DIVIDEND|WPŁATA|WPLATA)/.test(s)) return "floating_bond";
+      return "unknown";
+    }
+
+    function render() {
+      const series = buildDailySeries(records);
+      const current = currentExposure(records);
+      const total = Object.values(current).reduce((sum, value) => sum + Math.max(0, value), 0);
+      document.getElementById("balanceMetric").innerHTML = `${formatMoney(total)}<small>Szacowane saldo na podstawie rozpoznanych operacji</small>`;
+      document.getElementById("cagrMetric").innerHTML = `${formatPct(calcCagr(series))}<small>CAGR z dziennych sald po przeplywach</small>`;
+      document.getElementById("ddMetric").innerHTML = `${formatPct(calcMaxDrawdown(series))}<small>Max drawdown salda</small>`;
+      document.getElementById("recordsMetric").innerHTML = `${records.length}<small>Unikalne zaimportowane rekordy</small>`;
+      renderExposure(current, total);
+      renderRebalance(current, total);
+      renderRecords();
+      drawChart(series);
+    }
+
+    function buildDailySeries(items) {
+      const byDate = new Map();
+      for (const rec of items) byDate.set(rec.date, (byDate.get(rec.date) || 0) + signedPortfolioAmount(rec));
+      let balance = 0;
+      return Array.from(byDate.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([date, flow]) => {
+        balance += flow;
+        return { date, value: balance };
+      });
+    }
+
+    function currentExposure(items) {
+      const exposure = Object.fromEntries(CATEGORIES.map(category => [category, 0]));
+      for (const rec of items) {
+        const securityType = rec.securityType || legacySecurityType(rec.category);
+        exposure[securityType] = (exposure[securityType] || 0) + exposureImpact(rec);
+      }
+      return exposure;
+    }
+
+    function signedPortfolioAmount(rec) {
+      const operationType = rec.operationType || legacyOperationType(rec);
+      if (operationType === "transfer_ignore") return 0;
+      if (operationType === "position_snapshot") return 0;
+      return rec.amount;
+    }
+
+    function exposureImpact(rec) {
+      const operationType = rec.operationType || legacyOperationType(rec);
+      if (operationType === "transfer_ignore") return 0;
+      if (operationType === "position_snapshot") return rec.amount;
+      if (operationType === "buy") return Math.abs(rec.amount);
+      if (operationType === "sell") return -Math.abs(rec.amount);
+      if (operationType === "deposit" || operationType === "dividend_interest" || operationType === "adjustment") return rec.amount;
+      if (operationType === "withdrawal" || operationType === "fee_tax") return -Math.abs(rec.amount);
+      return rec.amount;
+    }
+
+    function legacySecurityType(category) {
+      return CATEGORIES.includes(category) ? category : "unknown";
+    }
+
+    function legacyOperationType(rec) {
+      if (rec.operationType) return rec.operationType;
+      const text = `${rec.description || ""} ${rec.symbol || ""}`;
+      return classifyOperation(text, rec.amount);
+    }
+
+    function renderExposure(current, total) {
+      const rows = CATEGORIES.map(category => {
+        const value = current[category] || 0;
+        const share = total > 0 ? value / total : 0;
+        return `<tr><td>${SECURITY_LABELS[category]}</td><td>${formatMoney(value)}</td><td>${formatPct(share)}</td><td>${formatPct(TARGET[category] || 0)}</td></tr>`;
+      }).join("");
+      document.getElementById("exposureTable").innerHTML = `<table><thead><tr><th>Kategoria</th><th>Kwota</th><th>Udzial</th><th>Cel strategii</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    function renderRebalance(current, total) {
+      if (total <= 0) {
+        document.getElementById("rebalanceTable").innerHTML = "<p>Brak dodatniego salda do policzenia rebalancingu.</p>";
+        return;
+      }
+      const rows = CATEGORIES.filter(category => category !== "unknown").map(category => {
+        const currentValue = current[category] || 0;
+        const targetValue = total * (TARGET[category] || 0);
+        const diff = targetValue - currentValue;
+        const action = Math.abs(diff) < total * 0.01 ? "bez zmian" : diff > 0 ? "kup / przenies" : "sprzedaj / zmniejsz";
+        return `<tr><td>${SECURITY_LABELS[category]}</td><td>${action}</td><td>${formatMoney(Math.abs(diff))}</td><td>${formatPct((TARGET[category] || 0))}</td></tr>`;
+      }).join("");
+      document.getElementById("rebalanceTable").innerHTML = `<table><thead><tr><th>Kategoria</th><th>Akcja</th><th>Kwota</th><th>Cel</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    function renderRecords() {
+      const body = document.getElementById("recordsBody");
+      body.innerHTML = records.slice().sort((a, b) => b.date.localeCompare(a.date)).map(rec => `
+        <tr>
+          <td>${escapeHtml(rec.date)}</td>
+          <td>${escapeHtml(rec.description || "")}</td>
+          <td>${escapeHtml(rec.symbol || "")}</td>
+          <td>${formatMoney(rec.amount)}</td>
+          <td><span class="pill">${escapeHtml(rec.currency || "PLN")}</span></td>
+          <td>${operationSelect(rec)}</td>
+          <td>${securitySelect(rec)}</td>
+          <td>${escapeHtml(rec.source)}</td>
+        </tr>
+      `).join("");
+      body.querySelectorAll("select[data-id][data-field]").forEach(select => {
+        select.addEventListener("change", event => {
+          const rec = records.find(item => item.id === event.target.dataset.id);
+          if (rec) rec[event.target.dataset.field] = event.target.value;
+          saveRecords();
+          render();
+        });
+      });
+    }
+
+    function operationSelect(rec) {
+      const value = rec.operationType || legacyOperationType(rec);
+      return `<select data-id="${rec.id}" data-field="operationType">${OPERATION_TYPES.map(type => `<option value="${type}" ${value === type ? "selected" : ""}>${OPERATION_LABELS[type]}</option>`).join("")}</select>`;
+    }
+
+    function securitySelect(rec) {
+      const value = rec.securityType || legacySecurityType(rec.category);
+      return `<select data-id="${rec.id}" data-field="securityType">${CATEGORIES.map(category => `<option value="${category}" ${value === category ? "selected" : ""}>${SECURITY_LABELS[category]}</option>`).join("")}</select>`;
+    }
+
+    function drawChart(series) {
+      const canvas = document.getElementById("historyChart");
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (series.length < 2) {
+        ctx.fillStyle = "#666";
+        ctx.fillText("Zaladuj pliki CSV, aby zobaczyc historie salda.", 30, 40);
+        return;
+      }
+      const pad = { left: 64, right: 24, top: 22, bottom: 38 };
+      const values = series.map(point => point.value);
+      const min = Math.min(0, ...values);
+      const max = Math.max(...values);
+      const x = index => pad.left + (index / (series.length - 1)) * (canvas.width - pad.left - pad.right);
+      const y = value => pad.top + (1 - (value - min) / Math.max(1, max - min)) * (canvas.height - pad.top - pad.bottom);
+      ctx.strokeStyle = "#e5dfd2";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const yy = pad.top + i * (canvas.height - pad.top - pad.bottom) / 4;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, yy);
+        ctx.lineTo(canvas.width - pad.right, yy);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = "#163f4d";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      series.forEach((point, index) => {
+        if (index === 0) ctx.moveTo(x(index), y(point.value));
+        else ctx.lineTo(x(index), y(point.value));
+      });
+      ctx.stroke();
+      ctx.fillStyle = "#555";
+      ctx.font = "12px Segoe UI, Arial";
+      ctx.fillText(formatMoney(max), 8, pad.top + 5);
+      ctx.fillText(formatMoney(min), 8, canvas.height - pad.bottom);
+      ctx.fillText(series[0].date, pad.left, canvas.height - 12);
+      ctx.fillText(series[series.length - 1].date, canvas.width - pad.right - 78, canvas.height - 12);
+    }
+
+    function calcCagr(series) {
+      if (series.length < 2 || series[0].value <= 0 || series[series.length - 1].value <= 0) return NaN;
+      const start = new Date(series[0].date);
+      const end = new Date(series[series.length - 1].date);
+      const years = Math.max(1 / 365, (end - start) / (365.25 * 24 * 60 * 60 * 1000));
+      return Math.pow(series[series.length - 1].value / series[0].value, 1 / years) - 1;
+    }
+
+    function calcMaxDrawdown(series) {
+      let peak = -Infinity;
+      let maxDd = 0;
+      for (const point of series) {
+        peak = Math.max(peak, point.value);
+        if (peak > 0) maxDd = Math.min(maxDd, point.value / peak - 1);
+      }
+      return maxDd;
+    }
+
+    function parseXlsWorkbook(buffer, source) {
+      const bytes = new Uint8Array(buffer);
+      const workbook = extractWorkbookStream(bytes);
+      if (!workbook) return [];
+      const rows = parseBiffRows(workbook);
+      return rowsToPositionRecords(rows, source);
+    }
+
+    function rowsToPositionRecords(rows, source) {
+      const headerIndex = rows.findIndex(row => row.some(cell => normalizeHeader(cell) === "emisja"));
+      if (headerIndex < 0) return [];
+      const header = rows[headerIndex].map(normalizeHeader);
+      const date = dateFromFilename(source) || new Date().toISOString().slice(0, 10);
+      const idx = {
+        symbol: header.indexOf("emisja"),
+        quantity: header.indexOf("dostepna_liczba_obligacji"),
+        nominal: header.indexOf("wartosc_nominalna"),
+        current: header.indexOf("wartosc_aktualna"),
+        maturity: header.indexOf("data_wykupu")
+      };
+      return rows.slice(headerIndex + 1).map(row => {
+        const symbol = String(row[idx.symbol] || "").trim();
+        const amount = Number(row[idx.current]);
+        if (!symbol || !Number.isFinite(amount)) return null;
+        const quantity = idx.quantity >= 0 ? row[idx.quantity] : "";
+        const maturity = idx.maturity >= 0 ? row[idx.maturity] : "";
+        const description = `Stan obligacji ${symbol}${quantity ? `, liczba ${quantity}` : ""}${maturity ? `, wykup ${maturity}` : ""}`;
+        const id = fingerprint([source, date, symbol, amount.toFixed(4), maturity].join("|"));
+        return { id, date, description, symbol, amount, currency: "PLN", operationType: "position_snapshot", securityType: classifySecurity(symbol), source };
+      }).filter(Boolean);
+    }
+
+    function extractWorkbookStream(bytes) {
+      if (bytes[0] !== 0xd0 || bytes[1] !== 0xcf || bytes[2] !== 0x11 || bytes[3] !== 0xe0) return null;
+      const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      const sectorSize = 1 << view.getUint16(30, true);
+      const miniSectorSize = 1 << view.getUint16(32, true);
+      const firstDirSector = view.getInt32(48, true);
+      const miniCutoff = view.getUint32(56, true);
+      const firstMiniFatSector = view.getInt32(60, true);
+      const miniFatSectorCount = view.getUint32(64, true);
+      const fatSectors = [];
+      for (let i = 0; i < 109; i++) {
+        const sector = view.getInt32(76 + i * 4, true);
+        if (sector >= 0) fatSectors.push(sector);
+      }
+      const fat = [];
+      for (const sector of fatSectors) {
+        const offset = sectorOffset(sector, sectorSize);
+        for (let p = 0; p < sectorSize; p += 4) fat.push(view.getInt32(offset + p, true));
+      }
+      const dirBytes = readRegularChain(bytes, view, fat, firstDirSector, sectorSize);
+      const entries = parseDirectory(dirBytes);
+      const workbookEntry = entries.find(entry => /^(Workbook|Book)$/i.test(entry.name));
+      const rootEntry = entries.find(entry => entry.type === 5);
+      if (!workbookEntry) return null;
+      if (workbookEntry.size < miniCutoff && rootEntry && rootEntry.startSector >= 0) {
+        const miniStream = readRegularChain(bytes, view, fat, rootEntry.startSector, sectorSize);
+        const miniFat = [];
+        let sector = firstMiniFatSector;
+        for (let count = 0; sector >= 0 && count < miniFatSectorCount; count++) {
+          const offset = sectorOffset(sector, sectorSize);
+          for (let p = 0; p < sectorSize; p += 4) miniFat.push(view.getInt32(offset + p, true));
+          sector = fat[sector];
+        }
+        return readMiniChain(miniStream, miniFat, workbookEntry.startSector, miniSectorSize, workbookEntry.size);
+      }
+      return readRegularChain(bytes, view, fat, workbookEntry.startSector, sectorSize).slice(0, workbookEntry.size);
+    }
+
+    function sectorOffset(sector, sectorSize) {
+      return 512 + sector * sectorSize;
+    }
+
+    function readRegularChain(bytes, view, fat, startSector, sectorSize) {
+      const chunks = [];
+      const seen = new Set();
+      let sector = startSector;
+      while (sector >= 0 && sector < fat.length && !seen.has(sector)) {
+        seen.add(sector);
+        const offset = sectorOffset(sector, sectorSize);
+        chunks.push(bytes.slice(offset, offset + sectorSize));
+        sector = fat[sector];
+      }
+      return concatBytes(chunks);
+    }
+
+    function readMiniChain(miniStream, miniFat, startSector, miniSectorSize, size) {
+      const chunks = [];
+      const seen = new Set();
+      let sector = startSector;
+      while (sector >= 0 && sector < miniFat.length && !seen.has(sector)) {
+        seen.add(sector);
+        const offset = sector * miniSectorSize;
+        chunks.push(miniStream.slice(offset, offset + miniSectorSize));
+        sector = miniFat[sector];
+      }
+      return concatBytes(chunks).slice(0, size);
+    }
+
+    function parseDirectory(dirBytes) {
+      const view = new DataView(dirBytes.buffer, dirBytes.byteOffset, dirBytes.byteLength);
+      const entries = [];
+      for (let offset = 0; offset + 128 <= dirBytes.length; offset += 128) {
+        const nameLength = view.getUint16(offset + 64, true);
+        if (nameLength < 2) continue;
+        let name = "";
+        for (let p = 0; p < nameLength - 2; p += 2) name += String.fromCharCode(view.getUint16(offset + p, true));
+        entries.push({
+          name,
+          type: view.getUint8(offset + 66),
+          startSector: view.getInt32(offset + 116, true),
+          size: view.getUint32(offset + 120, true)
+        });
+      }
+      return entries;
+    }
+
+    function parseBiffRows(workbook) {
+      const records = [];
+      const view = new DataView(workbook.buffer, workbook.byteOffset, workbook.byteLength);
+      let offset = 0;
+      while (offset + 4 <= workbook.length) {
+        const sid = view.getUint16(offset, true);
+        const len = view.getUint16(offset + 2, true);
+        const data = workbook.slice(offset + 4, offset + 4 + len);
+        records.push({ sid, data });
+        offset += 4 + len;
+      }
+      const sst = parseSst(records);
+      const rows = [];
+      for (const record of records) {
+        const dataView = new DataView(record.data.buffer, record.data.byteOffset, record.data.byteLength);
+        if (record.sid === 0x00fd && record.data.length >= 10) {
+          setCell(rows, dataView.getUint16(0, true), dataView.getUint16(2, true), sst[dataView.getUint32(6, true)] || "");
+        } else if (record.sid === 0x0203 && record.data.length >= 14) {
+          setCell(rows, dataView.getUint16(0, true), dataView.getUint16(2, true), dataView.getFloat64(6, true));
+        } else if (record.sid === 0x027e && record.data.length >= 10) {
+          setCell(rows, dataView.getUint16(0, true), dataView.getUint16(2, true), decodeRk(dataView.getUint32(6, true)));
+        } else if (record.sid === 0x00bd && record.data.length >= 10) {
+          const row = dataView.getUint16(0, true);
+          const firstCol = dataView.getUint16(2, true);
+          const lastCol = dataView.getUint16(record.data.length - 2, true);
+          for (let col = firstCol, p = 4; col <= lastCol && p + 6 <= record.data.length - 2; col++, p += 6) {
+            setCell(rows, row, col, decodeRk(dataView.getUint32(p + 2, true)));
+          }
+        } else if (record.sid === 0x0204 && record.data.length >= 8) {
+          setCell(rows, dataView.getUint16(0, true), dataView.getUint16(2, true), readBiffString(record.data, 6).value);
+        }
+      }
+      return rows.map(row => row || []);
+    }
+
+    function parseSst(records) {
+      const first = records.find(record => record.sid === 0x00fc);
+      if (!first) return [];
+      const strings = [];
+      let offset = 8;
+      while (offset < first.data.length && strings.length < new DataView(first.data.buffer, first.data.byteOffset, first.data.byteLength).getUint32(4, true)) {
+        const parsed = readBiffString(first.data, offset);
+        strings.push(parsed.value);
+        offset = parsed.offset;
+      }
+      return strings;
+    }
+
+    function readBiffString(bytes, offset) {
+      const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      const length = view.getUint16(offset, true);
+      let p = offset + 2;
+      const flags = view.getUint8(p++);
+      const isUnicode = (flags & 0x01) !== 0;
+      const hasRich = (flags & 0x08) !== 0;
+      const hasExt = (flags & 0x04) !== 0;
+      let richRuns = 0;
+      let extSize = 0;
+      if (hasRich) {
+        richRuns = view.getUint16(p, true);
+        p += 2;
+      }
+      if (hasExt) {
+        extSize = view.getUint32(p, true);
+        p += 4;
+      }
+      let value = "";
+      for (let i = 0; i < length && p < bytes.length; i++) {
+        if (isUnicode) {
+          value += String.fromCharCode(view.getUint16(p, true));
+          p += 2;
+        } else {
+          value += String.fromCharCode(bytes[p++]);
+        }
+      }
+      p += richRuns * 4 + extSize;
+      return { value, offset: p };
+    }
+
+    function decodeRk(raw) {
+      let value;
+      if (raw & 0x02) {
+        value = raw >> 2;
+      } else {
+        const buffer = new ArrayBuffer(8);
+        const view = new DataView(buffer);
+        view.setUint32(4, raw & 0xfffffffc, true);
+        value = view.getFloat64(0, true);
+      }
+      return (raw & 0x01) ? value / 100 : value;
+    }
+
+    function setCell(rows, row, col, value) {
+      if (!rows[row]) rows[row] = [];
+      rows[row][col] = value;
+    }
+
+    function concatBytes(chunks) {
+      const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+      const out = new Uint8Array(total);
+      let offset = 0;
+      for (const chunk of chunks) {
+        out.set(chunk, offset);
+        offset += chunk.length;
+      }
+      return out;
+    }
+
+    function parseCsvLine(line, delimiter) {
+      const out = [];
+      let current = "";
+      let quoted = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"' && line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else if (ch === '"') {
+          quoted = !quoted;
+        } else if (ch === delimiter && !quoted) {
+          out.push(current);
+          current = "";
+        } else {
+          current += ch;
+        }
+      }
+      out.push(current);
+      return out;
+    }
+
+    function detectDelimiter(line) {
+      return (line.match(/;/g) || []).length >= (line.match(/,/g) || []).length ? ";" : ",";
+    }
+
+    function normalizeHeader(value) {
+      return value.toLowerCase()
+        .replace(/^#/, "")
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "");
+    }
+
+    function firstValue(obj, keys) {
+      for (const key of keys) {
+        if (obj[key] !== undefined && obj[key] !== "") return obj[key];
+      }
+      return "";
+    }
+
+    function parseDateValue(value) {
+      const v = String(value || "").trim();
+      let m = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+      m = v.match(/^(\d{2})\.(\d{2})\.(\d{4})/);
+      if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+      return "";
+    }
+
+    function parseNumber(value) {
+      const v = String(value || "").replace(/\s/g, "").replace(/\u00a0/g, "");
+      if (!v) return NaN;
+      if (v.includes(",") && !v.includes(".")) return Number(v.replace(",", "."));
+      if (v.includes(",") && v.includes(".")) return Number(v.replace(/,/g, ""));
+      return Number(v);
+    }
+
+    function lastNumericCell(row) {
+      for (let i = row.length - 1; i >= 0; i--) {
+        const value = row[i];
+        if (Number.isFinite(parseNumber(value))) return value;
+      }
+      return "";
+    }
+
+    function extractSymbol(text) {
+      const m = String(text || "").match(/\(([A-Z0-9 .-]{2,24})\)/);
+      return m ? m[1].trim() : "";
+    }
+
+    function fingerprint(text) {
+      let hash = 2166136261;
+      for (let i = 0; i < text.length; i++) {
+        hash ^= text.charCodeAt(i);
+        hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+      }
+      return (hash >>> 0).toString(16);
+    }
+
+    function formatMoney(value) {
+      return `${Math.round((Number(value) || 0)).toLocaleString("pl-PL")} PLN`;
+    }
+
+    function formatPct(value) {
+      return Number.isFinite(value) ? `${(value * 100).toFixed(2)}%` : "n/d";
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[ch]));
+    }
+
+    function loadRecords() {
+      try {
+        const current = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+        if (current.length) return current.map(normalizeRecordShape);
+        const legacy = JSON.parse(localStorage.getItem(LEGACY_STORAGE_KEY) || "[]");
+        return legacy.map(normalizeRecordShape);
+      } catch {
+        return [];
+      }
+    }
+
+    function normalizeRecordShape(rec) {
+      return {
+        ...rec,
+        operationType: rec.operationType || legacyOperationType(rec),
+        securityType: rec.securityType || legacySecurityType(rec.category),
+        currency: rec.currency || "PLN"
+      };
+    }
+
+    function saveRecords() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    }
+
+    function exportRecords() {
+      const header = ["date", "description", "symbol", "amount", "currency", "operationType", "securityType", "source", "id"];
+      const rows = records.map(rec => header.map(key => csvEscape(rec[key])).join(","));
+      const blob = new Blob([header.join(",") + "\n" + rows.join("\n")], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "portfolio_import_history.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function csvEscape(value) {
+      const text = String(value ?? "");
+      return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    }
+
+    function dateFromFilename(source) {
+      const m = String(source || "").match(/(\d{4})-(\d{2})-(\d{2})/);
+      return m ? `${m[1]}-${m[2]}-${m[3]}` : "";
+    }
+
+    window.portfolioImport = {
+      parseAnyCsv,
+      parseXlsWorkbook,
+      render,
+      getRecords: () => records.slice()
+    };
+  </script>
+</body>
+</html>

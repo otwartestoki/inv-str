@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Glowne podsumowanie strategii</title>
+  <style>
+    body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; color: #222; background: #fbfbf8; }
+    main { max-width: 1180px; margin: 0 auto; padding: 28px 24px 48px; }
+    .top-nav { margin-bottom: 18px; font-size: 14px; }
+    a { color: #15616d; font-weight: 650; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    h1 { margin: 0 0 6px; font-size: 30px; }
+    h2 { margin: 0 0 12px; font-size: 18px; }
+    p { margin: 0; color: #555; line-height: 1.45; }
+    .meta { margin-bottom: 22px; color: #666; }
+    .hero { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 12px; margin: 22px 0; }
+    .metric { border: 1px solid #d8d1c3; background: #fff; padding: 14px; }
+    .metric span { display: block; color: #666; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+    .metric strong { display: block; margin-top: 6px; font-size: 24px; }
+    section { margin-top: 24px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+    .panel { border: 1px solid #d8d1c3; background: #fff; padding: 16px; }
+    ul { margin: 0; padding-left: 20px; color: #333; line-height: 1.55; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 8px 9px; border-bottom: 1px solid #e6e1d6; text-align: right; }
+    th:first-child, td:first-child { text-align: left; }
+    th { background: #f1eee6; color: #333; }
+    .links { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px 14px; }
+    .links li { margin: 0; }
+    @media (max-width: 760px) { .hero { grid-template-columns: 1fr 1fr; } main { padding: 22px 14px 36px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <nav class="top-nav"><a href="../report_view.html">Backtest strategii</a> / Glowne podsumowanie</nav>
+    <h1>Glowne podsumowanie strategii</h1>
+    <p class="meta">Okres backtestu: <strong>1954-07-02 - 2026-07-10</strong> | Ostatni sygnal: <strong>2026-07-10</strong></p>
+
+    <div class="hero">
+      <div class="metric"><span>CAGR strategii</span><strong>11.13%</strong></div>
+      <div class="metric"><span>Max drawdown</span><strong>-26.98%</strong></div>
+      <div class="metric"><span>Sharpe</span><strong>1.16</strong></div>
+      <div class="metric"><span>Wartosc koncowa</span><strong>2,010.06</strong></div>
+    </div>
+
+    <section class="panel">
+      <h2>Najwazniejsze wnioski</h2>
+      <ul>
+        <li>Strategia ma CAGR <strong>11.13%</strong> przy max drawdown <strong>-26.98%</strong>.</li>
+        <li>Rekomendowany miks 30/70/0 ma CAGR <strong>13.92%</strong> przy max drawdown <strong>-27.50%</strong>; to domyslny kompromis miedzy baza i srednio agresywna.</li>
+        <li>Wariant srednio agresywny ma CAGR <strong>15.06%</strong> przy max drawdown <strong>-32.20%</strong>; to umiarkowana wersja filtra momentum do 180% ekspozycji.</li>
+        <li>Wariant agresywny ma CAGR <strong>19.95%</strong> przy max drawdown <strong>-52.89%</strong>; sluzy do sprawdzenia, ile ryzyka wymaga cel bliski 20% CAGR.</li>
+        <li>100% akcji ma podobny CAGR (<strong>11.12%</strong>), ale drawdown jest duzo glebszy (<strong>-54.61%</strong>).</li>
+        <li>Aktualnie strategia jest defensywna: akcje <strong>31.12%</strong>, obligacje/gotowka <strong>68.88%</strong>, zloto <strong>0.00%</strong>.</li>
+        <li>Sygnal duration w czesci obligacyjnej wynosi <strong>50.00%</strong>, czyli model jest czesciowo w obligacjach stalych.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Wyniki</h2>
+      <table>
+        <thead><tr><th>Portfel</th><th>CAGR</th><th>Max DD</th><th>Zmiennosc</th><th>Sharpe</th><th>Wartosc koncowa</th></tr></thead>
+        <tbody><tr><td>Strategia</td><td>11.13%</td><td>-26.98%</td><td>9.57%</td><td>1.16</td><td>2,010.06</td></tr><tr><td>Rekomendowany miks 30/70/0</td><td>13.92%</td><td>-27.50%</td><td>12.20%</td><td>1.14</td><td>11,923.41</td></tr><tr><td>Strategia srednio agresywna</td><td>15.06%</td><td>-32.20%</td><td>13.59%</td><td>1.11</td><td>24,568.86</td></tr><tr><td>Strategia agresywna</td><td>19.95%</td><td>-52.89%</td><td>21.73%</td><td>0.92</td><td>491,969.18</td></tr><tr><td>100% akcje</td><td>11.12%</td><td>-54.61%</td><td>12.36%</td><td>0.90</td><td>1,991.85</td></tr><tr><td>80/20</td><td>10.11%</td><td>-44.05%</td><td>9.90%</td><td>1.02</td><td>1,033.04</td></tr><tr><td>60/40</td><td>9.02%</td><td>-31.58%</td><td>7.76%</td><td>1.16</td><td>503.12</td></tr></tbody>
+      </table>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Aktualna alokacja modelu</h2>
+        <table><tbody><tr><td>Akcje USA / SPX</td><td>31.12%</td></tr>
+<tr><td>Akcje swiat</td><td>0.00%</td></tr>
+<tr><td>Tech / NDX</td><td>0.00%</td></tr>
+<tr><td>Obligacje stale / 30+</td><td>34.44%</td></tr>
+<tr><td>Obligacje zmienne / gotowka</td><td>34.44%</td></tr>
+<tr><td>Zloto</td><td>0.00%</td></tr></tbody></table>
+      </div>
+      <div class="panel">
+        <h2>Podzial do rebalancingu</h2>
+        <table><tbody><tr><td>Akcje</td><td>31.12%</td></tr>
+<tr><td>Polskie obligacje nominalne</td><td>34.44%</td></tr>
+<tr><td>Polskie obligacje stale %</td><td>8.61%</td></tr>
+<tr><td>Polskie obligacje zmienne %</td><td>8.61%</td></tr>
+<tr><td>Zagraniczne obligacje stale %</td><td>8.61%</td></tr>
+<tr><td>Zagraniczne obligacje zmienne %</td><td>8.61%</td></tr>
+<tr><td>Zloto</td><td>0.00%</td></tr></tbody></table>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Aktualne sygnaly makro</h2>
+        <table><tbody><tr><td>Shiller</td><td>80.00% akcji</td></tr>
+<tr><td>Cykl Fed / bezrobocie / PKB</td><td>0.00% akcji</td></tr>
+<tr><td>Forward P/E</td><td>13.37% akcji</td></tr>
+<tr><td>CPI YoY</td><td>3.67%</td></tr>
+<tr><td>Real 10Y</td><td>0.87%</td></tr>
+<tr><td>GDP YoY</td><td>0.64%</td></tr>
+<tr><td>Forward P/E proxy</td><td>42.66</td></tr></tbody></table>
+      </div>
+      <div class="panel">
+        <h2>Uwagi</h2>
+        <ul>
+          <li>Forward P/E jest proxy bez look-ahead, nie oficjalna seria analityczna.</li>
+          <li>Okres przed 1985 wykorzystuje wiecej proxy niz nowszy fragment backtestu.</li>
+          <li>Koszt transakcyjny: 0.2% od kazdej strony kupna/sprzedazy.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>Najwazniejsze raporty</h2>
+      <ul class="links">
+        <li><a href="equity_curve_100.svg">Kapital i drawdown - skala liniowa</a></li><li><a href="equity_curve_100_log.svg">Kapital i drawdown - skala logarytmiczna</a></li><li><a href="allocation_percent.svg">Alokacja akcji na tle S&amp;P 500</a></li><li><a href="bond_allocation_macro.svg">Obligacje stale/zmienne na tle makro</a></li><li><a href="rates_vs_unemployment.svg">Fed Funds vs bezrobocie</a></li><li><a href="pe_hysteresis_path.svg">Histereza P/E</a></li><li><a href="spx_ndx_mix.svg">Proporcja SPX vs NDX</a></li><li><a href="gold_allocation.svg">Zloto</a></li><li><a href="oil_allocation.svg">Ropa jako filtr makro</a></li><li><a href="leverage_mode.svg">Aktywacja trybu lewarowanego</a></li><li><a href="decade_comparison.html">Porownanie dekadowe</a></li><li><a href="underwater_duration.html">Czas pod woda</a></li><li><a href="transactions_rebalancing.html">Lista transakcji i rebalancing</a></li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>
