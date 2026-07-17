@@ -1029,6 +1029,17 @@
         };
       }
 
+      function isLeverageActive(weights) {
+        const source = weights || selectedStrategyPayload().weights || {};
+        const totalExposure = Object.keys(source).reduce(function (sum, key) {
+          return sum + Number(source[key] || 0);
+        }, 0);
+        const equityExposure = Number(source.us_equity || 0) +
+          Number(source.world_equity || 0) +
+          Number(source.tech_equity || 0);
+        return totalExposure > 1.01 || equityExposure > 1.01;
+      }
+
       function updateStrategyDate() {
         const selected = selectedStrategyPayload();
         const weights = selected.weights || {};
@@ -1042,7 +1053,7 @@
         const leverageText = totalExposure > 1.01 ? " | ekspozycja brutto " + pct(totalExposure) : "";
         dateEl.textContent = "Docelowa alokacja: " + allocation.date + " | " + selected.label + leverageText;
         if (leverageWarningEl && leverageWarningTextEl) {
-          const leverageActive = totalExposure > 1.01 || equityExposure > 1.01;
+          const leverageActive = isLeverageActive(weights);
           leverageWarningEl.hidden = !leverageActive;
           if (leverageActive) {
             leverageWarningTextEl.textContent =
@@ -1088,6 +1099,9 @@
       }
 
       function preferredLeverage(targetExposureWeight) {
+        if (!isLeverageActive()) {
+          return 1;
+        }
         if (targetExposureWeight <= 1.0001) {
           return 1;
         }
@@ -1147,6 +1161,7 @@
           broad: Number(sleeves.broad || 0) * targetScale,
           ndx: Number(sleeves.ndx || 0) * targetScale
         };
+        const leverageActive = isLeverageActive();
         const positions = readLeveragedPositions();
         const targetsByKey = {};
         const chosen = {
@@ -1187,6 +1202,7 @@
         const targetBroadExposure = total * Number(scaledSleeves.broad || 0);
         const targetNdxExposure = total * Number(scaledSleeves.ndx || 0);
         leveragedSummaryEl.textContent =
+          (leverageActive ? "" : "Brak aktywnego bannera lewarowania - rekomendacje sa liczone tylko dla ETF-ow 1x. ") +
           "Docelowa ekspozycja: szeroki rynek " + pct(scaledSleeves.broad) +
           ", NDX/tech " + pct(scaledSleeves.ndx) +
           " | obecnie " + currentSourceText + ": szeroki rynek " + pct(total > 0 ? currentBroadExposure / total : 0) +
