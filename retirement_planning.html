@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Planowanie emerytury</title>
+  <style>
+    :root {
+      --ink: #202020;
+      --muted: #666;
+      --line: #d8d1c3;
+      --panel: #fff;
+      --bg: #f7f8f5;
+      --accent: #15616d;
+      --good: #0b6e4f;
+      --bad: #a23b2a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    main {
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 22px 18px 48px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+    h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    a {
+      color: var(--accent);
+      font-weight: 650;
+      text-decoration: none;
+    }
+    a:hover { text-decoration: underline; }
+    .top-nav {
+      margin: 0 0 18px;
+      font-size: 14px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 8px;
+      margin: 14px 0;
+    }
+    .metric, .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+    .metric {
+      padding: 10px;
+    }
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .metric strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 18px;
+    }
+    .panel {
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    .panel-head {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      padding: 12px;
+    }
+    label {
+      display: block;
+      color: #444;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    input, button {
+      font: inherit;
+    }
+    input {
+      width: 100%;
+      height: 30px;
+      margin-top: 5px;
+      padding: 4px 6px;
+      border: 1px solid #bdb6a7;
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      text-align: right;
+    }
+    button {
+      height: 30px;
+      align-self: end;
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    button.secondary {
+      background: #fff;
+      color: var(--accent);
+    }
+    .chart {
+      display: block;
+      width: 100%;
+      height: 360px;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      padding: 0 12px 12px;
+      color: #444;
+      font-size: 12px;
+    }
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .legend i {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+    .table-wrap {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      min-width: 1040px;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    th, td {
+      height: 30px;
+      padding: 4px 6px;
+      border-bottom: 1px solid #e7e1d8;
+      border-right: 1px solid #eee8df;
+      text-align: right;
+      white-space: nowrap;
+    }
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #f1eee6;
+      color: #333;
+      font-weight: 700;
+    }
+    th:first-child, td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      text-align: left;
+      background: #fff;
+    }
+    th:first-child {
+      z-index: 3;
+      background: #f1eee6;
+    }
+    tr.is-base td {
+      background: #fff8e7;
+      font-weight: 700;
+    }
+    tr.is-retired td {
+      background: #f4f7fb;
+    }
+    .good { color: var(--good); font-weight: 700; }
+    .bad { color: var(--bad); font-weight: 700; }
+    @media (max-width: 760px) {
+      main { padding: 22px 14px 42px; }
+      button { width: 100%; }
+      .chart { height: 300px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <nav class="top-nav"><a href="index.html">Strona glowna</a> / Planowanie emerytury</nav>
+    <h1>Planowanie emerytury</h1>
+    <p>Model pokazuje, jak przy zalozeniach inflacji, wzrostu przychodow i CAGR strategii zmienia sie saldo oraz roczne finansowanie wydatkow.</p>
+
+    <section class="grid" aria-label="Podsumowanie">
+      <div class="metric"><span>Rok startowy</span><strong id="metric-base-year">2026</strong></div>
+      <div class="metric"><span>Saldo na koniec startu</span><strong id="metric-base-balance">0</strong></div>
+      <div class="metric"><span>Saldo w wieku 65</span><strong id="metric-age-65">0</strong></div>
+      <div class="metric"><span>Saldo w wieku 85</span><strong id="metric-age-85">0</strong></div>
+      <div class="metric"><span>Najwiekszy pobor z oszcz.</span><strong id="metric-max-withdrawal">0</strong></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Zalozenia projekcji</h2>
+        <p>Wartosci w tabeli sa w tysiacach PLN. Projekcja przelicza lata po roku bazowym, zostawiajac historyczne dane bez zmian.</p>
+      </div>
+      <div class="controls">
+        <label>Rok bazowy
+          <input id="base-year" inputmode="numeric">
+        </label>
+        <label>Wiek w roku bazowym
+          <input id="base-age" inputmode="numeric">
+        </label>
+        <label>Inflacja CPI / wydatki
+          <input id="cpi-rate" inputmode="decimal">
+        </label>
+        <label>Wzrost przychodow
+          <input id="income-growth" inputmode="decimal">
+        </label>
+        <label>CAGR strategii
+          <input id="strategy-cagr" inputmode="decimal">
+        </label>
+        <label>Wiek konca pracy
+          <input id="work-until-age" inputmode="numeric">
+        </label>
+        <label>Wiek startu ZUS
+          <input id="zus-start-age" inputmode="numeric">
+        </label>
+        <label>Wzrost ZUS
+          <input id="zus-growth" inputmode="decimal">
+        </label>
+        <button id="recalculate" type="button">Przelicz projekcje</button>
+        <button id="reset" class="secondary" type="button">Przywroc dane startowe</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Saldo i roczne przeplywy</h2>
+        <p>Saldo jest po oszczednosciach lub pobraniu brakujacej kwoty oraz po wzroscie kapitalu wedlug CAGR strategii.</p>
+      </div>
+      <canvas class="chart" id="retirement-chart"></canvas>
+      <div class="legend">
+        <span><i style="background:#173b57"></i>Saldo na koniec roku</span>
+        <span><i style="background:#2f6fdd"></i>Przychod z pracy</span>
+        <span><i style="background:#d6453d"></i>Wydatki</span>
+        <span><i style="background:#0b6e4f"></i>ZUS</span>
+        <span><i style="background:#b45309"></i>Pobor z oszczednosci</span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Tabela projekcji</h2>
+        <p>Wiek i lata historyczne bazuja na Twojej tabeli. Pogrubiony rok to punkt startowy aktualnej projekcji.</p>
+      </div>
+      <div class="table-wrap">
+        <table id="retirement-table"></table>
+      </div>
+    </section>
+  </main>
+
+  <script src="assets/back_to_top.js"></script>
+  <script>
+    (function () {
+      const storageKey = "invStrRetirementPlanner.v1";
+      const seedRows = [
+        [35, 2021, 142, 174, 87, 32, "", ""],
+        [36, 2022, 171, 193, 82, 22, "", ""],
+        [37, 2023, 147, 246, 181, 99, "", ""],
+        [38, 2024, 187, 240, 162, 53, "", ""],
+        [39, 2025, 187, 276, 262, 89, "", ""],
+        [40, 2026, 190, 272, 346, 72, "", ""],
+        [41, 2027, 195, 277, 443, 82, "", ""],
+        [42, 2028, 200, 282, 544, 82, "", ""],
+        [43, 2029, 205, 287, 648, 82, "", ""],
+        [44, 2030, 210, 292, 756, 82, "", ""],
+        [45, 2031, 215, 297, 867, 82, "", ""],
+        [46, 2032, 220, 302, 982, 82, "", ""],
+        [47, 2033, 226, 307, 1100, 81, "", ""],
+        [48, 2034, 231, 312, 1222, 81, "", ""],
+        [49, 2035, 237, 317, 1348, 80, "", ""],
+        [50, 2036, 243, 322, 1476, 79, "", ""],
+        [51, 2037, 249, 327, 1608, 78, "", ""],
+        [52, 2038, 256, 332, 1744, 76, "", ""],
+        [53, 2039, 262, 337, 1883, 75, "", ""],
+        [54, 2040, 268, 342, 2025, 74, "", ""],
+        [55, 2041, 275, 347, 2170, 72, "", ""],
+        [56, 2042, 282, 352, 2318, 70, "", ""],
+        [57, 2043, 289, 357, 2469, 68, "", ""],
+        [58, 2044, 296, 362, 2624, 66, "", ""],
+        [59, 2045, 304, 367, 2781, 63, "", ""],
+        [60, 2046, 311, 372, 2941, 61, "", ""],
+        [61, 2047, 319, "", 3044, "", "", 319],
+        [62, 2048, 327, "", 3151, "", "", 327],
+        [63, 2049, 335, "", 3261, "", "", 335],
+        [64, 2050, 344, "", 3375, "", "", 344],
+        [65, 2051, 352, "", 3493, "", 372, -20],
+        [66, 2052, 361, "", 3616, "", 112, 249],
+        [67, 2053, 370, "", 3742, "", 117, 253],
+        [68, 2054, 379, "", 3873, "", 123, 256],
+        [69, 2055, 389, "", 4009, "", 129, 260],
+        [70, 2056, 399, "", 4149, "", 136, 263],
+        [71, 2057, 409, "", 4294, "", 142, 266],
+        [72, 2058, 419, "", 4444, "", 150, 269],
+        [73, 2059, 429, "", 4600, "", 157, 272],
+        [74, 2060, 440, "", 4761, "", 165, 275],
+        [75, 2061, 451, "", 4928, "", 173, 278],
+        [76, 2062, 462, "", 5100, "", 182, 280],
+        [77, 2063, 474, "", 5279, "", 191, 283],
+        [78, 2064, 486, "", 5463, "", 200, 285],
+        [79, 2065, 498, "", 5655, "", 210, 287],
+        [80, 2066, 510, "", 5852, "", 221, 289],
+        [81, 2067, 523, "", 6057, "", 232, 291],
+        [82, 2068, 536, "", 6269, "", 244, 292],
+        [83, 2069, 549, "", 6489, "", 256, 294],
+        [84, 2070, 563, "", 6716, "", 269, 295],
+        [85, 2071, 577, "", 6951, "", 282, 295]
+      ];
+
+      const defaults = {
+        assumptions: {
+          baseYear: 2026,
+          baseAge: 40,
+          cpiRate: 2.5,
+          incomeGrowth: 1.8,
+          strategyCagr: 7.0,
+          workUntilAge: 60,
+          zusStartAge: 65,
+          zusGrowth: 5.0
+        },
+        rows: seedRows.map(rowFromArray)
+      };
+
+      let state = loadState();
+      const tableEl = document.getElementById("retirement-table");
+      const chartEl = document.getElementById("retirement-chart");
+      const inputs = {
+        baseYear: document.getElementById("base-year"),
+        baseAge: document.getElementById("base-age"),
+        cpiRate: document.getElementById("cpi-rate"),
+        incomeGrowth: document.getElementById("income-growth"),
+        strategyCagr: document.getElementById("strategy-cagr"),
+        workUntilAge: document.getElementById("work-until-age"),
+        zusStartAge: document.getElementById("zus-start-age"),
+        zusGrowth: document.getElementById("zus-growth")
+      };
+
+      function rowFromArray(row) {
+        return {
+          age: row[0],
+          year: row[1],
+          expenses: row[2],
+          income: row[3],
+          balance: row[4],
+          saving: row[5],
+          zus: row[6],
+          withdrawal: row[7]
+        };
+      }
+
+      function clone(value) {
+        return JSON.parse(JSON.stringify(value));
+      }
+
+      function loadState() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(storageKey) || "{}");
+          if (parsed && parsed.rows && parsed.assumptions) {
+            return parsed;
+          }
+        } catch (error) {}
+        return clone(defaults);
+      }
+
+      function saveState() {
+        localStorage.setItem(storageKey, JSON.stringify(state));
+      }
+
+      function numberValue(value) {
+        if (value === "" || value === null || value === undefined) {
+          return 0;
+        }
+        const parsed = Number(String(value).replace(/\s/g, "").replace(",", "."));
+        return Number.isFinite(parsed) ? parsed : 0;
+      }
+
+      function fmt(value) {
+        if (value === "" || value === null || value === undefined || !Number.isFinite(Number(value))) {
+          return "";
+        }
+        return new Intl.NumberFormat("pl-PL", { maximumFractionDigits: 0 }).format(Math.round(Number(value)));
+      }
+
+      function pctInput(value) {
+        return String(value).replace(".", ",");
+      }
+
+      function readAssumptions() {
+        Object.keys(inputs).forEach(function (key) {
+          state.assumptions[key] = numberValue(inputs[key].value);
+        });
+      }
+
+      function writeAssumptions() {
+        Object.keys(inputs).forEach(function (key) {
+          inputs[key].value = ["cpiRate", "incomeGrowth", "strategyCagr", "zusGrowth"].includes(key)
+            ? pctInput(state.assumptions[key])
+            : state.assumptions[key];
+        });
+      }
+
+      function projectRows() {
+        readAssumptions();
+        const a = state.assumptions;
+        const baseIndex = state.rows.findIndex(function (row) {
+          return Number(row.year) === Number(a.baseYear);
+        });
+        if (baseIndex < 0) {
+          alert("Nie znaleziono roku bazowego w tabeli.");
+          return;
+        }
+        const rows = state.rows.map(function (row, index) {
+          return index <= baseIndex ? clone(row) : {
+            age: a.baseAge + (row.year - a.baseYear),
+            year: row.year,
+            expenses: "",
+            income: "",
+            balance: "",
+            saving: "",
+            zus: "",
+            withdrawal: ""
+          };
+        });
+        for (let i = baseIndex + 1; i < rows.length; i += 1) {
+          const previous = rows[i - 1];
+          const row = rows[i];
+          row.expenses = Math.round(numberValue(previous.expenses) * (1 + a.cpiRate / 100));
+          if (row.age <= a.workUntilAge) {
+            row.income = Math.round(numberValue(previous.income) * (1 + a.incomeGrowth / 100));
+            row.saving = Math.max(0, row.income - row.expenses);
+            row.zus = "";
+            row.withdrawal = "";
+          } else {
+            row.income = "";
+            row.saving = "";
+            const previousZus = numberValue(previous.zus);
+            if (row.age >= a.zusStartAge) {
+              row.zus = previousZus > 0 ? Math.round(previousZus * (1 + a.zusGrowth / 100)) : Math.round(row.expenses);
+              row.withdrawal = Math.max(0, row.expenses - row.zus);
+            } else {
+              row.zus = "";
+              row.withdrawal = row.expenses;
+            }
+          }
+          const cashFlow = numberValue(row.saving) - numberValue(row.withdrawal);
+          row.balance = Math.round(Math.max(0, numberValue(previous.balance) * (1 + a.strategyCagr / 100) + cashFlow));
+        }
+        state.rows = rows;
+        saveState();
+        render();
+      }
+
+      function renderMetrics() {
+        const a = state.assumptions;
+        const row65 = state.rows.find(function (row) { return Number(row.age) === 65; });
+        const row85 = state.rows.find(function (row) { return Number(row.age) === 85; });
+        const base = state.rows.find(function (row) { return Number(row.year) === Number(a.baseYear); });
+        const maxWithdrawal = Math.max.apply(null, state.rows.map(function (row) { return numberValue(row.withdrawal); }));
+        document.getElementById("metric-base-year").textContent = a.baseYear;
+        document.getElementById("metric-base-balance").textContent = fmt(base && base.balance);
+        document.getElementById("metric-age-65").textContent = fmt(row65 && row65.balance);
+        document.getElementById("metric-age-85").textContent = fmt(row85 && row85.balance);
+        document.getElementById("metric-max-withdrawal").textContent = fmt(maxWithdrawal);
+      }
+
+      function renderTable() {
+        const a = state.assumptions;
+        const rows = [];
+        rows.push("<thead><tr><th>Wiek J&E</th><th>Rok</th><th>Wydatki</th><th>Przychod</th><th>Saldo na koniec roku</th><th>Oszczednosc</th><th>ZUS</th><th>Pobor z oszczednosci</th></tr></thead><tbody>");
+        state.rows.forEach(function (row) {
+          const classes = [
+            Number(row.year) === Number(a.baseYear) ? "is-base" : "",
+            Number(row.age) > Number(a.workUntilAge) ? "is-retired" : ""
+          ].filter(Boolean).join(" ");
+          rows.push(`<tr class="${classes}">`);
+          rows.push(`<td>${fmt(row.age)}</td>`);
+          rows.push(`<td>${fmt(row.year)}</td>`);
+          rows.push(`<td>${fmt(row.expenses)}</td>`);
+          rows.push(`<td>${fmt(row.income)}</td>`);
+          rows.push(`<td>${fmt(row.balance)}</td>`);
+          rows.push(`<td class="${numberValue(row.saving) >= 0 ? "good" : "bad"}">${fmt(row.saving)}</td>`);
+          rows.push(`<td>${fmt(row.zus)}</td>`);
+          rows.push(`<td class="${numberValue(row.withdrawal) > 0 ? "bad" : "good"}">${fmt(row.withdrawal)}</td>`);
+          rows.push("</tr>");
+        });
+        rows.push("</tbody>");
+        tableEl.innerHTML = rows.join("");
+      }
+
+      function setupChart() {
+        const rect = chartEl.getBoundingClientRect();
+        const width = Math.max(320, Math.floor(rect.width));
+        const height = Math.max(300, Math.floor(rect.height || 360));
+        const dpr = window.devicePixelRatio || 1;
+        chartEl.width = width * dpr;
+        chartEl.height = height * dpr;
+        const ctx = chartEl.getContext("2d");
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, width, height);
+        ctx.font = "11px Segoe UI, Arial, sans-serif";
+        return { ctx, width, height, left: 58, right: 16, top: 16, bottom: 34 };
+      }
+
+      function drawChart() {
+        const chart = setupChart();
+        const { ctx, width, height, left, right, top, bottom } = chart;
+        const plotW = width - left - right;
+        const plotH = height - top - bottom;
+        const years = state.rows.map(function (row) { return row.year; });
+        const balances = state.rows.map(function (row) { return numberValue(row.balance); });
+        const flows = state.rows.flatMap(function (row) {
+          return [numberValue(row.expenses), numberValue(row.income), numberValue(row.zus), numberValue(row.withdrawal)];
+        });
+        const maxValue = Math.max.apply(null, balances.concat(flows, [1])) * 1.08;
+        const xFor = function (index) { return left + index / Math.max(1, years.length - 1) * plotW; };
+        const yFor = function (value) { return top + plotH - value / maxValue * plotH; };
+        ctx.strokeStyle = "#e4dfd6";
+        ctx.fillStyle = "#555";
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+        for (let i = 0; i <= 5; i += 1) {
+          const value = maxValue * i / 5;
+          const y = yFor(value);
+          ctx.beginPath();
+          ctx.moveTo(left, y);
+          ctx.lineTo(left + plotW, y);
+          ctx.stroke();
+          ctx.fillText(fmt(value), left - 8, y);
+        }
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        years.forEach(function (year, index) {
+          if (index % 5 === 0 || index === years.length - 1) {
+            ctx.fillText(String(year), xFor(index), top + plotH + 9);
+          }
+        });
+        ctx.strokeStyle = "#333";
+        ctx.beginPath();
+        ctx.moveTo(left, top);
+        ctx.lineTo(left, top + plotH);
+        ctx.lineTo(left + plotW, top + plotH);
+        ctx.stroke();
+
+        const barSeries = [
+          { key: "income", color: "rgba(47,111,221,0.50)" },
+          { key: "expenses", color: "rgba(214,69,61,0.50)" },
+          { key: "zus", color: "rgba(11,110,79,0.55)" },
+          { key: "withdrawal", color: "rgba(180,83,9,0.55)" }
+        ];
+        const groupW = plotW / Math.max(1, years.length);
+        const barW = Math.max(2, Math.min(6, groupW / 5));
+        barSeries.forEach(function (series, seriesIndex) {
+          ctx.fillStyle = series.color;
+          state.rows.forEach(function (row, index) {
+            const value = numberValue(row[series.key]);
+            if (!value) return;
+            const x = left + index * groupW + groupW / 2 + (seriesIndex - 1.5) * barW;
+            const y = yFor(value);
+            ctx.fillRect(x - barW / 2, y, barW, top + plotH - y);
+          });
+        });
+        ctx.strokeStyle = "#173b57";
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        balances.forEach(function (value, index) {
+          const x = xFor(index);
+          const y = yFor(value);
+          if (index === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+      }
+
+      function render() {
+        writeAssumptions();
+        renderMetrics();
+        renderTable();
+        drawChart();
+      }
+
+      Object.keys(inputs).forEach(function (key) {
+        inputs[key].addEventListener("change", function () {
+          readAssumptions();
+          saveState();
+          renderMetrics();
+        });
+      });
+      document.getElementById("recalculate").addEventListener("click", projectRows);
+      document.getElementById("reset").addEventListener("click", function () {
+        if (!confirm("Przywrocic startowe dane emerytalne?")) return;
+        state = clone(defaults);
+        saveState();
+        render();
+      });
+      window.addEventListener("resize", drawChart);
+
+      render();
+    })();
+  </script>
+</body>
+</html>

@@ -48,7 +48,7 @@ jobs:
       - name: Prepare static site
         run: |
           mkdir -p _site
-          cp index.html report_view.html portfolio_import.html rebalance_strategy.html budget_planning.html README.md _site/
+          cp index.html report_view.html portfolio_import.html rebalance_strategy.html budget_planning.html retirement_planning.html README.md _site/
           cp -r assets _site/assets
           cp -r reports _site/reports
           mkdir -p _site/data
