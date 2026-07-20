@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Backtest strategii</title>
+  <title>Rebalancing strategii</title>
   <style>
     body {
       margin: 0;
@@ -426,172 +426,111 @@
 </head>
 <body>
   <main>
-    <nav class="top-nav"><a href="index.html">Strona glowna</a> / Backtest strategii</nav>
-    <h1>Backtest strategii</h1>
-    <p>Uporzadkowany podglad wynikow, wykresow i tabel z backtestu strategii od 1954 roku. Okres przed 1985 korzysta z proxy i ma nizsza jakosc danych niz nowszy fragment.</p>
-    <section class="report-index" aria-label="Indeks raportow">
-      <div class="report-group">
-        <h3>Podsumowania</h3>
-        <ul class="report-list">
-          <li>
-            <a href="reports/summary.html">Glowne podsumowanie</a>
-            <span>Czytelna podstrona z wnioskami, metrykami, aktualna alokacja i linkami do raportow.</span>
-          </li>
-          <li>
-            <a href="README.md">Opis strategii</a>
-            <span>Pelny opis zasad: Shiller, cykl makro, P/E, SPX/NDX, zloto i rebalancing.</span>
-          </li>
-        </ul>
-      </div>
+    <nav class="top-nav"><a href="index.html">Strona glowna</a> / Rebalancing strategii</nav>
+    <h1>Rebalancing strategii</h1>
+    <p>Panel do wpisania aktualnego portfela, wyboru wariantu strategii i policzenia transakcji potrzebnych do dojscia do docelowej alokacji.</p>
+    <div class="leverage-warning" id="leverage-warning" hidden>
+      <strong>Uwaga: aktywny tryb lewarowany</strong>
+      <span id="leverage-warning-text"></span>
+    </div>
 
-      <div class="report-group">
-        <h3>Wykresy</h3>
-        <ul class="report-list">
-          <li>
-            <a href="reports/equity_curve_100.svg">Kapital i drawdown</a>
-            <span>Wzrost inwestycji 100 USD oraz obsuniecia strategii, rekomendowanego miksu i benchmarkow w skali liniowej.</span>
-          </li>
-          <li>
-            <a href="reports/equity_curve_100_log.svg">Kapital i drawdown log</a>
-            <span>Wzrost inwestycji 100 USD w skali logarytmicznej oraz drawdown.</span>
-          </li>
-          <li>
-            <a href="reports/allocation_percent.svg">Alokacja akcji</a>
-            <span>Udzial akcji w strategii kontra 100%, 80/20 i 60/40, z SPX w tle.</span>
-          </li>
-          <li>
-            <a href="reports/rates_vs_unemployment.svg">Fed Funds vs bezrobocie</a>
-            <span>Glowny sygnal defensywny cyklu makro, z SPX w tle.</span>
-          </li>
-          <li>
-            <a href="reports/pe_hysteresis_path.svg">Histereza P/E</a>
-            <span>Sciezka modulu Forward P/E po rownoleglych liniach histerezy.</span>
-          </li>
-          <li>
-            <a href="reports/spx_ndx_mix.svg">SPX vs NDX</a>
-            <span>Jedna linia 0-100%: udzial NDX w czesci akcyjnej, gdzie reszta to SPX.</span>
-          </li>
-          <li>
-            <a href="reports/gold_allocation.svg">Zloto</a>
-            <span>Udzial zlota w portfelu na tle indeksu ceny zlota.</span>
-          </li>
-          <li>
-            <a href="reports/oil_allocation.svg">Ropa</a>
-            <span>Sygnał ropy na tle ceny WTI; filtr ogranicza obligacje 30+, ale nie kupuje ropy.</span>
-          </li>
-          <li>
-            <a href="reports/bond_allocation_macro.svg">Obligacje vs makro</a>
-            <span>Jedna linia 0-100%: udzial obligacji 30+ w czesci defensywnej, gdzie reszta to floating/gotowka.</span>
-          </li>
-          <li>
-            <a href="reports/leverage_mode.svg">Tryb lewarowany</a>
-            <span>Ekspozycja akcyjna wariantow strategii oraz okresy aktywacji lewara na tle S&amp;P 500.</span>
-          </li>
-        </ul>
+    <section class="rebalance-panel" aria-label="Panel rebalancingu portfela">
+      <div class="rebalance-head">
+        <h2>Rebalancing portfela</h2>
+        <span class="rebalance-date" id="rebalance-target-date">Docelowa alokacja: wczytywanie...</span>
       </div>
-
-      <div class="report-group">
-        <h3>Tabele i transakcje</h3>
-        <ul class="report-list">
-          <li>
-            <a href="reports/yearly_allocation_mix.html">Roczna alokacja</a>
-            <span>Srednie roczne proporcje strategii bazowej oraz ekspozycja akcyjna rekomendowanego miksu i wariantow agresywnych.</span>
-          </li>
-          <li>
-            <a href="reports/annual_heatmap.html">Heatmapa roczna</a>
-            <span>Roczne stopy zwrotu i roczne max drawdown dla strategii, rekomendowanego miksu, wariantow agresywnych i benchmarkow.</span>
-          </li>
-          <li>
-            <a href="reports/decade_comparison.html">Porownanie dekadowe</a>
-            <span>CAGR, zwrot laczny, max drawdown, zmiennosc i Sharpe dla kazdej dekady, razem z rekomendowanym miksem.</span>
-          </li>
-          <li>
-            <a href="reports/underwater_duration.html">Czas na stracie</a>
-            <span>Jak dlugo strategia, rekomendowany miks, warianty agresywne i benchmarki byly ponizej poprzedniego szczytu kapitalu.</span>
-          </li>
-          <li>
-            <a href="reports/strategy_mix_report.html">Miksy wariantow</a>
-            <span>Porownanie stalych proporcji strategii bazowej, srednio agresywnej i agresywnej; rekomendowany miks to 30/70/0.</span>
-          </li>
-          <li>
-            <a href="reports/transactions_rebalancing.html">Transakcje i rebalancing</a>
-            <span>Lista rebalancingow po progu 5 p.p. oraz szczegoly kupna i sprzedazy.</span>
-          </li>
-          <li>
-            <a href="reports/bond_switches.html">Przejscia obligacji</a>
-            <span>Daty przejsc miedzy obligacjami 30+ i zmiennoprocentowymi/gotowka.</span>
-          </li>
-          <li>
-            <a href="reports/weekly_backtest.csv">Pelny panel CSV</a>
-            <span>Tygodniowe dane, sygnaly, wagi, stopy zwrotu i benchmarki.</span>
-          </li>
-          <li>
-            <a href="reports/metrics.csv">Metryki CSV</a>
-            <span>CAGR, zmiennosc, Sharpe, max drawdown i koncowa wartosc.</span>
-          </li>
-        </ul>
+      <div class="rebalance-total-input">
+        <div class="rebalance-field">
+          <label for="rebalance-strategy-select">Strategia dla raportow i rebalancingu</label>
+          <select id="rebalance-strategy-select">
+            <option value="strategy_recommended_mix">Rekomendowany miks 30/70/0</option>
+            <option value="strategy">Strategia bazowa</option>
+            <option value="strategy_medium_aggressive">Strategia srednio agresywna</option>
+            <option value="strategy_aggressive">Strategia agresywna</option>
+          </select>
+        </div>
+        <div class="rebalance-field">
+          <label for="rebalance-manual-total">Suma portfela</label>
+          <input id="rebalance-manual-total" inputmode="decimal" placeholder="opcjonalnie, np. 100000">
+        </div>
+        <p class="rebalance-hint">Mozesz wpisac kwoty albo procenty. Kwota ma pierwszenstwo; akcje sa jedna pula. Przy strategii lewarowanej cel akcji w tej tabeli jest wartoscia gotowkowa ETF-ow 1x/2x/3x, a nie ekspozycja brutto. Obligacje nominalne sa rdzeniem, a reszta dzieli sie proporcjonalnie na stale/zmienne wedlug cyklu. Panel podpowiada transakcje dopiero po odchyleniu o 5 p.p.</p>
+      </div>
+      <div class="rebalance-grid" id="rebalance-inputs"></div>
+      <div class="rebalance-actions">
+        <button type="button" id="rebalance-calc">Przelicz</button>
+        <button type="button" class="secondary" id="rebalance-clear">Wyczysc</button>
+        <label class="rebalance-option">
+          <input type="checkbox" id="rebalance-lock-fixed" checked>
+          Nie sprzedawaj obligacji stalo %
+        </label>
+        <span class="rebalance-total" id="rebalance-total">Suma portfela: 0.00</span>
+      </div>
+      <div class="currency-view" aria-label="Szacunkowa ekspozycja walutowa">
+        <div class="currency-pie-block">
+          <div class="currency-pie" id="currency-pie-current"></div>
+          <div class="currency-legend">
+            <strong>Waluty obecnie</strong>
+            <div class="currency-row"><span class="currency-dot"></span><span id="currency-current-pln">PLN: 0.00 (0.0%)</span></div>
+            <div class="currency-row"><span class="currency-dot foreign"></span><span id="currency-current-foreign">Inne waluty: 0.00 (0.0%)</span></div>
+          </div>
+        </div>
+        <div class="currency-pie-block">
+          <div class="currency-pie" id="currency-pie-target"></div>
+          <div class="currency-legend">
+            <strong>Waluty po rebalancingu</strong>
+            <div class="currency-row"><span class="currency-dot"></span><span id="currency-target-pln">PLN: 0.00 (0.0%)</span></div>
+            <div class="currency-row"><span class="currency-dot foreign"></span><span id="currency-target-foreign">Inne waluty: 0.00 (0.0%)</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="allocation-chart" aria-label="Porownanie obecnej i docelowej alokacji">
+        <h3>Obecna alokacja vs cel strategii</h3>
+        <div class="allocation-chart-legend">
+          <span><i class="allocation-swatch"></i> obecnie</span>
+          <span><i class="allocation-swatch target"></i> cel</span>
+        </div>
+        <div id="allocation-compare-chart"></div>
+      </div>
+      <div class="leveraged-box" aria-label="Rebalancing ETF-ow lewarowanych">
+        <h3>Realizacja ekspozycji akcjami 1x/2x/3x</h3>
+        <p>Opcjonalnie wpisz obecne pozycje w ETF-ach 1x/2x/3x. Te pola nie dodaja sie drugi raz do sumy portfela; sluza tylko do policzenia, jak zamienic docelowa ekspozycje SPX/ACWI i NDX na realna kwote zakupu w instrumentach lewarowanych.</p>
+        <div class="leveraged-grid" id="leveraged-inputs"></div>
+        <div class="leveraged-summary" id="leveraged-summary">Ekspozycja akcyjna: 0.0%</div>
+        <div class="rebalance-table-wrap">
+          <table class="rebalance-table">
+            <thead>
+              <tr>
+                <th>Instrument</th>
+                <th>Dzwignia</th>
+                <th>Obecnie ETF</th>
+                <th>Obecna eksp.</th>
+                <th>Cel ETF</th>
+                <th>Cel eksp.</th>
+                <th>Zmiana eksp.</th>
+                <th>Kup/sprzedaj ETF</th>
+              </tr>
+            </thead>
+            <tbody id="leveraged-results"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="rebalance-table-wrap">
+        <table class="rebalance-table">
+          <thead>
+            <tr>
+              <th>Aktywo</th>
+              <th>Obecnie</th>
+              <th>Obecny %</th>
+              <th>Cel %</th>
+              <th>Cel kwota</th>
+              <th>Transakcja</th>
+            </tr>
+          </thead>
+          <tbody id="rebalance-results"></tbody>
+        </table>
       </div>
     </section>
 
-    <section>
-      <h2>Fed Funds vs bezrobocie na tle S&amp;P 500</h2>
-      <p class="chart-note">Pokazuje momenty przecięcia stop i bezrobocia od gory, czyli mocny sygnal wyjscia z akcji.</p>
-      <img src="reports/rates_vs_unemployment.svg" alt="Fed Funds vs bezrobocie na tle S&P 500">
-    </section>
-
-    <section>
-      <h2>Udzial akcji w portfelu na tle S&amp;P 500</h2>
-      <p class="chart-note">Porownuje zmienny udzial akcji w strategii ze stalymi benchmarkami 100%, 80/20 i 60/40.</p>
-      <img src="reports/allocation_percent.svg" alt="Udzial akcji w portfelu na tle S&P 500">
-    </section>
-
-    <section>
-      <h2>Proporcja SPX vs NDX w czesci akcyjnej</h2>
-      <p class="chart-note">Jedna linia pokazuje udzial NDX w czesci akcyjnej: 0% oznacza sam SPX, 50% oznacza 50/50, 100% oznacza sam NDX.</p>
-      <img src="reports/spx_ndx_mix.svg" alt="Proporcja SPX vs NDX w czesci akcyjnej">
-    </section>
-
-    <section>
-      <h2>Udzial zlota w portfelu</h2>
-      <p class="chart-note">Pokazuje okresy aktywnego zlota i indeks ceny zlota w tle.</p>
-      <img src="reports/gold_allocation.svg" alt="Udzial zlota w portfelu">
-    </section>
-
-    <section>
-      <h2>Sygnał ropy</h2>
-      <p class="chart-note">Ropa jest uzywana jako filtr makro: przy aktywnym oil_regime strategia ogranicza agresywne wejscie w obligacje 30+ i preferuje floating/gotowke.</p>
-      <img src="reports/oil_allocation.svg" alt="Sygnał ropy na tle ceny WTI">
-    </section>
-
-    <section>
-      <h2>Proporcja obligacji 30+ vs zmiennoprocentowe</h2>
-      <p class="chart-note">Jedna linia pokazuje udzial obligacji 30+ w czesci defensywnej: 0% oznacza floating/gotowke, 50% oznacza 50/50, 100% oznacza same 30+.</p>
-      <img src="reports/bond_allocation_macro.svg" alt="Proporcja obligacji 30+ vs zmiennoprocentowe">
-    </section>
-
-    <section>
-      <h2>Aktywacja trybu lewarowanego</h2>
-      <p class="chart-note">Pokazuje ekspozycje akcyjna strategii bazowej, rekomendowanego miksu oraz wariantow agresywnych. Tlo oznacza okresy, gdy rekomendowany miks przekracza 100% ekspozycji.</p>
-      <img src="reports/leverage_mode.svg" alt="Aktywacja trybu lewarowanego">
-    </section>
-
-    <section>
-      <h2>Kapital od 100 USD i drawdown</h2>
-      <p class="chart-note">Pokazuje domyslny wariant strategii oraz benchmarki. Wariant do praktycznego rebalancingu wybierzesz na osobnej podstronie.</p>
-      <div class="equity-dynamic-chart" id="equity-chart-linear" role="img" aria-label="Kapital od 100 USD i drawdown"></div>
-    </section>
-
-    <section>
-      <h2>Kapital od 100 USD i drawdown - skala log</h2>
-      <p class="chart-note">Ten sam widok dla wybranej strategii oraz benchmarkow, ale z kapitalem w skali logarytmicznej.</p>
-      <div class="equity-dynamic-chart" id="equity-chart-log" role="img" aria-label="Kapital od 100 USD i drawdown w skali logarytmicznej"></div>
-    </section>
-
-    <section>
-      <h2>Histereza P/E</h2>
-      <p class="chart-note">Pokazuje, jak modul Forward P/E porusza sie po petli histerezy i zmienia udzial akcji.</p>
-      <img src="reports/pe_hysteresis_path.svg" alt="Histereza P/E">
-    </section>
   </main>
   <script>
     (function () {
@@ -1330,11 +1269,6 @@
         }
         localStorage.removeItem(storageKey);
         calculate();
-      }
-
-      if (!inputsEl || !resultsEl || !manualTotalEl || !strategySelectEl) {
-        updateEquityCharts();
-        return;
       }
 
       if (manualTotalEl) {

@@ -55,6 +55,12 @@ Panel glowny prowadzi do backtestu oraz importera historii portfela. Sam backtes
 report_view.html
 ```
 
+Panel rebalancingu strategii:
+
+```text
+rebalance_strategy.html
+```
+
 Importer historii portfela:
 
 ```text
@@ -79,7 +85,7 @@ Workflow:
 
 - instaluje zaleznosci z `requirements.txt`,
 - uruchamia `refresh_reports.sh`,
-- buduje statyczna paczke z `index.html`, `report_view.html`, `portfolio_import.html`, `README.md`, `reports/` i `data/processed/`,
+- buduje statyczna paczke z `index.html`, `report_view.html`, `portfolio_import.html`, `rebalance_strategy.html`, `README.md`, `reports/` i `data/processed/`,
 - publikuje ja jako GitHub Pages.
 
 Domyslnie raport odswieza sie automatycznie w soboty o `06:25 UTC`. Mozna tez wymusic odswiezenie recznie w zakladce `Actions`.
