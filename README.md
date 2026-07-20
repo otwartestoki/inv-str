@@ -49,7 +49,7 @@ Najwygodniejszy podglad:
 index.html
 ```
 
-Panel glowny prowadzi do backtestu oraz importera historii portfela. Sam backtest jest nadal dostepny tutaj:
+Panel glowny prowadzi do backtestu, importera historii portfela, rebalancingu oraz planowania budzetu. Sam backtest jest nadal dostepny tutaj:
 
 ```text
 report_view.html
@@ -65,6 +65,12 @@ Importer historii portfela:
 
 ```text
 portfolio_import.html
+```
+
+Planowanie budzetu:
+
+```text
+budget_planning.html
 ```
 
 Importer dziala lokalnie w przegladarce. Zapamietuje scalona historie w `localStorage`, wiec po zaladowaniu nowych CSV/XLS dopisuje tylko nowe rekordy i nie powinien dublowac juz wczytanych operacji. Klasyfikacja ma dwie osie:
@@ -85,7 +91,7 @@ Workflow:
 
 - instaluje zaleznosci z `requirements.txt`,
 - uruchamia `refresh_reports.sh`,
-- buduje statyczna paczke z `index.html`, `report_view.html`, `portfolio_import.html`, `rebalance_strategy.html`, `README.md`, `reports/` i `data/processed/`,
+- buduje statyczna paczke z `index.html`, `report_view.html`, `portfolio_import.html`, `rebalance_strategy.html`, `budget_planning.html`, `README.md`, `assets/`, `reports/` i `data/processed/`,
 - publikuje ja jako GitHub Pages.
 
 Domyslnie raport odswieza sie automatycznie w soboty o `06:25 UTC`. Mozna tez wymusic odswiezenie recznie w zakladce `Actions`.
