@@ -479,7 +479,7 @@
           <label for="rebalance-manual-total">Suma portfela</label>
           <input id="rebalance-manual-total" inputmode="decimal" placeholder="opcjonalnie, np. 100000">
         </div>
-        <p class="rebalance-hint">Mozesz wpisac kwoty albo procenty. Kwota ma pierwszenstwo; akcje sa jedna pula. Polskie obligacje nominalne z konta maklerskiego sa doliczane do nominalnych i odejmowane od pola Polskie obligacje zmienne %, jesli wpisujesz tam laczna wartosc z maklera. Przy strategii lewarowanej cel akcji w tej tabeli jest wartoscia gotowkowa ETF-ow 1x/2x/3x, a nie ekspozycja brutto. Obligacje nominalne sa rdzeniem, a reszta dzieli sie proporcjonalnie na stale/zmienne wedlug cyklu. Panel podpowiada transakcje dopiero po odchyleniu o 5 p.p.</p>
+        <p class="rebalance-hint">Mozesz wpisac kwoty albo procenty. Kwota ma pierwszenstwo; akcje sa jedna pula. Czesc obligacyjna jest dzielona na trzy koszyki: 34% polskie skarbowe nominalne, 33% pozostale polskie obligacje oraz 33% zagraniczne obligacje. W koszykach polskim i zagranicznym proporcja stale/zmienne zmienia sie wedlug cyklu stop procentowych. Przy strategii lewarowanej cel akcji w tej tabeli jest wartoscia gotowkowa ETF-ow 1x/2x/3x, a nie ekspozycja brutto. Panel podpowiada transakcje dopiero po odchyleniu o 5 p.p.</p>
       </div>
       <div class="rebalance-grid" id="rebalance-inputs"></div>
       <div class="rebalance-actions">
@@ -596,32 +596,27 @@
         },
         {
           key: "pl_nominal",
-          label: "Polskie obligacje nominalne - obligacjeskarbowe.pl",
-          group: "pl_nominal"
-        },
-        {
-          key: "pl_nominal_broker",
-          label: "Polskie obligacje nominalne - konto maklerskie",
+          label: "Polskie skarbowe nominalne",
           group: "pl_nominal"
         },
         {
           key: "pl_fixed",
-          label: "Polskie obligacje stale %",
+          label: "Polskie skarbowe stalo % (FPC1140)",
           group: "pl_fixed"
         },
         {
           key: "pl_float",
-          label: "Polskie obligacje zmienne %",
+          label: "Polskie skarbowe/korporacyjne zmienno % (Catalyst, FPC0631, IZ0836)",
           group: "pl_float"
         },
         {
           key: "foreign_fixed",
-          label: "Zagraniczne obligacje stale %",
+          label: "Zagraniczne notowane na gieldzie, mix",
           group: "foreign_fixed"
         },
         {
           key: "foreign_float",
-          label: "Zagraniczne obligacje zmienne %",
+          label: "Zagraniczne zmienno % (IDTL)",
           group: "foreign_float"
         },
         {
@@ -632,11 +627,11 @@
       ];
       const resultRows = [
         { key: "stocks", label: "Akcje / ETF-y akcyjne - wartosc gotowkowa" },
-        { key: "pl_nominal", label: "Polskie obligacje nominalne" },
-        { key: "pl_fixed", label: "Polskie obligacje stale %" },
-        { key: "pl_float", label: "Polskie obligacje zmienne %" },
-        { key: "foreign_fixed", label: "Zagraniczne obligacje stale %" },
-        { key: "foreign_float", label: "Zagraniczne obligacje zmienne %" },
+        { key: "pl_nominal", label: "Polskie skarbowe nominalne" },
+        { key: "pl_fixed", label: "Polskie skarbowe stalo % (FPC1140)" },
+        { key: "pl_float", label: "Polskie skarbowe/korporacyjne zmienno %" },
+        { key: "foreign_fixed", label: "Zagraniczne notowane na gieldzie, mix" },
+        { key: "foreign_float", label: "Zagraniczne zmienno % (IDTL)" },
         { key: "gold", label: "Zloto" }
       ];
       const leveragedRows = [
@@ -960,14 +955,16 @@
         const floatingBond = Number(sourceWeights.floating_bond || 0);
         const bondTarget = Math.max(0, 1 - equityCashTarget - goldTarget);
         const durationShare = longBond + floatingBond > 0 ? longBond / (longBond + floatingBond) : 0;
+        const polishOtherBondTarget = bondTarget * 0.33;
+        const foreignBondTarget = bondTarget * 0.33;
         const weights = {};
 
         weights.stocks = equityCashTarget;
-        weights.pl_nominal = bondTarget / 2;
-        weights.pl_fixed = (bondTarget / 4) * durationShare;
-        weights.pl_float = (bondTarget / 4) * (1 - durationShare);
-        weights.foreign_fixed = (bondTarget / 4) * durationShare;
-        weights.foreign_float = (bondTarget / 4) * (1 - durationShare);
+        weights.pl_nominal = bondTarget * 0.34;
+        weights.pl_fixed = polishOtherBondTarget * durationShare;
+        weights.pl_float = polishOtherBondTarget * (1 - durationShare);
+        weights.foreign_fixed = foreignBondTarget * durationShare;
+        weights.foreign_float = foreignBondTarget * (1 - durationShare);
         weights.gold = goldTarget;
         return weights;
       }
@@ -1126,12 +1123,11 @@
       }
 
       function displayCurrent(current) {
-        const brokerNominal = current.pl_nominal_broker || 0;
         return {
           stocks: (current.pl_stocks || 0) + (current.foreign_stocks || 0),
-          pl_nominal: (current.pl_nominal || 0) + brokerNominal,
+          pl_nominal: current.pl_nominal || 0,
           pl_fixed: current.pl_fixed || 0,
-          pl_float: Math.max(0, (current.pl_float || 0) - brokerNominal),
+          pl_float: current.pl_float || 0,
           foreign_fixed: current.foreign_fixed || 0,
           foreign_float: current.foreign_float || 0,
           gold: current.gold || 0
