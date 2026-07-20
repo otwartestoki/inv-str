@@ -453,7 +453,7 @@
           <label for="rebalance-manual-total">Suma portfela</label>
           <input id="rebalance-manual-total" inputmode="decimal" placeholder="opcjonalnie, np. 100000">
         </div>
-        <p class="rebalance-hint">Mozesz wpisac kwoty albo procenty. Kwota ma pierwszenstwo; akcje sa jedna pula. Przy strategii lewarowanej cel akcji w tej tabeli jest wartoscia gotowkowa ETF-ow 1x/2x/3x, a nie ekspozycja brutto. Obligacje nominalne sa rdzeniem, a reszta dzieli sie proporcjonalnie na stale/zmienne wedlug cyklu. Panel podpowiada transakcje dopiero po odchyleniu o 5 p.p.</p>
+        <p class="rebalance-hint">Mozesz wpisac kwoty albo procenty. Kwota ma pierwszenstwo; akcje sa jedna pula. Polskie obligacje nominalne z konta maklerskiego sa doliczane do nominalnych i odejmowane od pola Polskie obligacje zmienne %, jesli wpisujesz tam laczna wartosc z maklera. Przy strategii lewarowanej cel akcji w tej tabeli jest wartoscia gotowkowa ETF-ow 1x/2x/3x, a nie ekspozycja brutto. Obligacje nominalne sa rdzeniem, a reszta dzieli sie proporcjonalnie na stale/zmienne wedlug cyklu. Panel podpowiada transakcje dopiero po odchyleniu o 5 p.p.</p>
       </div>
       <div class="rebalance-grid" id="rebalance-inputs"></div>
       <div class="rebalance-actions">
@@ -569,7 +569,12 @@
         },
         {
           key: "pl_nominal",
-          label: "Polskie obligacje nominalne",
+          label: "Polskie obligacje nominalne - obligacjeskarbowe.pl",
+          group: "pl_nominal"
+        },
+        {
+          key: "pl_nominal_broker",
+          label: "Polskie obligacje nominalne - konto maklerskie",
           group: "pl_nominal"
         },
         {
@@ -1080,11 +1085,12 @@
       }
 
       function displayCurrent(current) {
+        const brokerNominal = current.pl_nominal_broker || 0;
         return {
           stocks: (current.pl_stocks || 0) + (current.foreign_stocks || 0),
-          pl_nominal: current.pl_nominal || 0,
+          pl_nominal: (current.pl_nominal || 0) + brokerNominal,
           pl_fixed: current.pl_fixed || 0,
-          pl_float: current.pl_float || 0,
+          pl_float: Math.max(0, (current.pl_float || 0) - brokerNominal),
           foreign_fixed: current.foreign_fixed || 0,
           foreign_float: current.foreign_float || 0,
           gold: current.gold || 0
@@ -1092,14 +1098,15 @@
       }
 
       function currencyExposure(current) {
+        const display = displayCurrent(current);
         const pln = (current.pl_stocks || 0) +
-          (current.pl_nominal || 0) +
-          (current.pl_fixed || 0) +
-          (current.pl_float || 0);
+          display.pl_nominal +
+          display.pl_fixed +
+          display.pl_float;
         const foreign = (current.foreign_stocks || 0) +
-          (current.foreign_fixed || 0) +
-          (current.foreign_float || 0) +
-          (current.gold || 0);
+          display.foreign_fixed +
+          display.foreign_float +
+          display.gold;
         return { pln: pln, foreign: foreign };
       }
 
@@ -1193,7 +1200,7 @@
         const display = displayCurrent(current);
         const baseTargets = targetWeights(current);
         const enteredTotal = currentState.manualTotal;
-        const amountTotal = inputRows.reduce((sum, row) => sum + current[row.key], 0);
+        const amountTotal = resultRows.reduce((sum, row) => sum + (display[row.key] || 0), 0);
         const total = enteredTotal > 0 && amountTotal <= enteredTotal * 1.01 ? enteredTotal : amountTotal;
         const targets = adjustedTargetsForLocks(baseTargets, display, total);
         resultsEl.innerHTML = "";
