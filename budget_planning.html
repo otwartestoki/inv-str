@@ -218,20 +218,37 @@
       overflow-x: auto;
     }
     table {
-      width: 100%;
+      width: 680px;
       min-width: 680px;
+      max-width: 680px;
       border-collapse: collapse;
       font-size: 12px;
       table-layout: fixed;
     }
     .narrow table {
+      width: 500px;
       min-width: 500px;
+      max-width: 500px;
     }
     .wide table {
+      width: 760px;
       min-width: 760px;
+      max-width: 760px;
     }
     #income-table {
-      min-width: 1160px;
+      width: 1152px;
+      min-width: 1152px;
+      max-width: 1152px;
+    }
+    #saving-table {
+      width: 452px;
+      min-width: 452px;
+      max-width: 452px;
+    }
+    #balance-table {
+      width: 1126px;
+      min-width: 1126px;
+      max-width: 1126px;
     }
     th, td {
       border-bottom: 1px solid #e7e1d8;
@@ -369,10 +386,7 @@
         display: none;
       }
       table, .narrow table, .wide table {
-        min-width: 760px;
-      }
-      #income-table {
-        min-width: 1160px;
+        max-width: none;
       }
     }
     @media (min-width: 1481px) {
@@ -767,13 +781,26 @@
           .reduce(function (sum, [key]) { return sum + numberValue(month.balance && month.balance[key]); }, 0);
       }
 
-      function latestMonthWithBalance(yearData) {
-        for (let i = 11; i >= 0; i -= 1) {
-          if (monthBalanceTotal(yearData.months[i]) > 0 || numberValue(yearData.months[i].balance && yearData.months[i].balance.plannedBalance) > 0) {
+      function planMonthIndexForYear(year) {
+        const selectedYear = Number(year);
+        const today = new Date();
+        const currentYear = today.getFullYear();
+        if (selectedYear < currentYear) {
+          return 11;
+        }
+        if (selectedYear > currentYear) {
+          return 0;
+        }
+        return today.getMonth();
+      }
+
+      function latestBalanceMonthUpTo(yearData, maxIndex) {
+        for (let i = maxIndex; i >= 0; i -= 1) {
+          if (monthBalanceTotal(yearData.months[i]) > 0) {
             return i;
           }
         }
-        return 0;
+        return maxIndex;
       }
 
       function inputHtml(section, monthIndex, field, value, text) {
@@ -869,17 +896,19 @@
         const realSaving = yearData.months.reduce(function (sum, month) { return sum + (hasValue(month.realSaving) ? numberValue(month.realSaving) : 0); }, 0);
         const income = yearData.months.reduce(function (sum, month) { return sum + monthIncome(month); }, 0);
         const costs = yearData.months.reduce(function (sum, month) { return sum + monthPlannedCosts(month); }, 0);
-        const latestIndex = latestMonthWithBalance(yearData);
-        const latestMonth = yearData.months[latestIndex];
-        const latestBalance = monthBalanceTotal(latestMonth);
-        const latestPlan = numberValue(latestMonth.balance && latestMonth.balance.plannedBalance);
-        const gap = latestBalance - latestPlan;
+        const planIndex = planMonthIndexForYear(state.activeYear);
+        const balanceIndex = latestBalanceMonthUpTo(yearData, planIndex);
+        const balanceMonth = yearData.months[balanceIndex];
+        const planMonth = yearData.months[planIndex];
+        const latestBalance = monthBalanceTotal(balanceMonth);
+        const currentPlan = numberValue(planMonth.balance && planMonth.balance.plannedBalance);
+        const gap = latestBalance - currentPlan;
 
         document.getElementById("metric-plan-saving").textContent = formatMoney(planSaving);
         document.getElementById("metric-real-saving").textContent = formatMoney(realSaving);
         document.getElementById("metric-progress").textContent = formatPct(planSaving ? realSaving / planSaving : NaN);
         document.getElementById("metric-balance").textContent = formatMoney(latestBalance);
-        document.getElementById("metric-gap").textContent = latestPlan ? formatMoney(gap) : "-";
+        document.getElementById("metric-gap").textContent = currentPlan ? formatMoney(gap) : "-";
         document.getElementById("metric-gap").className = gap >= 0 ? "good" : "bad";
 
         annualTable.innerHTML = `
@@ -889,10 +918,11 @@
             <tr><td>Planowana nadwyzka z wplywow</td><td>${formatMoney(income - costs)}</td></tr>
             <tr><td>Prognoza oszczednosci</td><td>${formatMoney(planSaving)}</td></tr>
             <tr><td>Realne oszczednosci</td><td>${formatMoney(realSaving)}</td></tr>
-            <tr><td>Ostatni miesiac sald</td><td>${monthLabels[latestIndex]} ${state.activeYear}</td></tr>
+            <tr><td>Miesiac planu</td><td>${monthLabels[planIndex]} ${state.activeYear}</td></tr>
+            <tr><td>Miesiac salda</td><td>${monthLabels[balanceIndex]} ${state.activeYear}</td></tr>
             <tr><td>Suma sald</td><td>${formatMoney(latestBalance)}</td></tr>
-            <tr><td>Suma plan</td><td>${latestPlan ? formatMoney(latestPlan) : "-"}</td></tr>
-            <tr><td>Roznica sald</td><td class="${gap >= 0 ? "good" : "bad"}">${latestPlan ? formatMoney(gap) : "-"}</td></tr>
+            <tr><td>Suma plan na dzisiaj</td><td>${currentPlan ? formatMoney(currentPlan) : "-"}</td></tr>
+            <tr><td>Roznica sald</td><td class="${gap >= 0 ? "good" : "bad"}">${currentPlan ? formatMoney(gap) : "-"}</td></tr>
           </tbody>
         `;
       }
