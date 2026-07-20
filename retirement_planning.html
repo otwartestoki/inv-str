@@ -151,6 +151,20 @@
       padding: 0 10px;
       font-size: 12px;
     }
+    .table-input {
+      width: 82px;
+      height: 24px;
+      margin: 0;
+      padding: 2px 5px;
+      border-color: #d2cabd;
+      border-radius: 4px;
+      background: #fffdf8;
+      font-size: 12px;
+    }
+    .table-input:focus {
+      border-color: var(--accent);
+      outline: 2px solid rgba(47, 111, 221, 0.15);
+    }
     .chart {
       display: block;
       width: 100%;
@@ -365,7 +379,7 @@
     <section class="panel">
       <div class="panel-head">
         <h2>Tabela projekcji</h2>
-        <p>Wiek i lata historyczne bazuja na Twojej tabeli. Pogrubiony rok to punkt startowy aktualnej projekcji.</p>
+        <p>Wiek i lata historyczne bazuja na Twojej tabeli. Kolumny Wydatki i Przychod mozna edytowac, a pogrubiony rok to punkt startowy aktualnej projekcji.</p>
       </div>
       <div class="table-wrap">
         <table id="retirement-table"></table>
@@ -518,6 +532,10 @@
         return new Intl.NumberFormat("pl-PL", { maximumFractionDigits: 0 }).format(Math.round(Number(value)));
       }
 
+      function inputValue(value) {
+        return value === "" || value === null || value === undefined ? "" : String(value).replace(".", ",");
+      }
+
       function pctInput(value) {
         return String(value).replace(".", ",");
       }
@@ -604,6 +622,14 @@
         render();
       }
 
+      function recalculateFromCurrentRows() {
+        const rows = projectedRowsFor(state.assumptions);
+        if (rows.length) {
+          state.rows = rows;
+          state.modelVersion = modelVersion;
+        }
+      }
+
       function renderMetrics() {
         const a = state.assumptions;
         const row65 = state.rows.find(function (row) { return Number(row.age) === 65; });
@@ -662,7 +688,7 @@
         const a = state.assumptions;
         const rows = [];
         rows.push("<thead><tr><th>Wiek J&E</th><th>Rok</th><th>Wydatki</th><th>Przychod</th><th>Saldo na koniec roku</th><th>Oszczednosc</th><th>ZUS</th><th>Pobor z oszczednosci</th><th>Przeplyw netto</th></tr></thead><tbody>");
-        state.rows.forEach(function (row) {
+        state.rows.forEach(function (row, index) {
           const netFlow = numberValue(row.saving) - numberValue(row.withdrawal);
           const classes = [
             Number(row.year) === Number(a.baseYear) ? "is-base" : "",
@@ -671,8 +697,8 @@
           rows.push(`<tr class="${classes}">`);
           rows.push(`<td>${fmt(row.age)}</td>`);
           rows.push(`<td>${fmt(row.year)}</td>`);
-          rows.push(`<td>${fmt(row.expenses)}</td>`);
-          rows.push(`<td>${fmt(row.income)}</td>`);
+          rows.push(`<td><input class="table-input" data-row="${index}" data-field="expenses" inputmode="decimal" value="${inputValue(row.expenses)}"></td>`);
+          rows.push(`<td><input class="table-input" data-row="${index}" data-field="income" inputmode="decimal" value="${inputValue(row.income)}"></td>`);
           rows.push(`<td>${fmt(row.balance)}</td>`);
           rows.push(`<td class="${numberValue(row.saving) >= 0 ? "good" : "bad"}">${fmt(row.saving)}</td>`);
           rows.push(`<td>${fmt(row.zus)}</td>`);
@@ -854,6 +880,21 @@
         }
         inputs.workUntilAge.value = button.dataset.retireAge;
         projectRows();
+      });
+      tableEl.addEventListener("change", function (event) {
+        const input = event.target.closest("[data-row][data-field]");
+        if (!input) {
+          return;
+        }
+        const row = state.rows[Number(input.dataset.row)];
+        const field = input.dataset.field;
+        if (!row || !["expenses", "income"].includes(field)) {
+          return;
+        }
+        row[field] = input.value.trim() === "" ? "" : Math.round(numberValue(input.value));
+        recalculateFromCurrentRows();
+        saveState();
+        render();
       });
       document.getElementById("recalculate").addEventListener("click", projectRows);
       document.getElementById("reset").addEventListener("click", function () {
