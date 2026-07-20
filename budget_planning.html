@@ -1187,11 +1187,13 @@
             const denom = points.reduce(function (sum, point) { return sum + Math.pow(point.x - meanX, 2); }, 0);
             const slope = denom ? points.reduce(function (sum, point) { return sum + (point.x - meanX) * (point.y - meanY); }, 0) / denom : 0;
             const intercept = meanY - slope * meanX;
+            const firstPoint = points[0];
+            const lastPoint = points[points.length - 1];
             ctx.strokeStyle = series.trend;
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.moveTo(xFor(0), yFor(intercept));
-            ctx.lineTo(xFor(labels.length - 1), yFor(intercept + slope * (labels.length - 1)));
+            ctx.moveTo(xFor(firstPoint.x), yFor(intercept + slope * firstPoint.x));
+            ctx.lineTo(xFor(lastPoint.x), yFor(intercept + slope * lastPoint.x));
             ctx.stroke();
           }
         });
@@ -1361,11 +1363,13 @@
         const years = Object.keys(state.years).sort();
         const annualIncome = years.map(function (year) {
           const data = normalizeYearData(state.years[year]);
-          return data.months.reduce(function (sum, month) { return sum + monthIncome(month); }, 0);
+          const value = data.months.reduce(function (sum, month) { return sum + monthIncome(month); }, 0);
+          return value > 0 ? value : NaN;
         });
         const annualCosts = years.map(function (year) {
           const data = normalizeYearData(state.years[year]);
-          return data.months.reduce(function (sum, month) { return sum + monthPlannedCosts(month); }, 0);
+          const value = data.months.reduce(function (sum, month) { return sum + monthPlannedCosts(month); }, 0);
+          return value > 0 ? value : NaN;
         });
 
         drawLineChart(dashboardCharts.balancePlan, labels, [
