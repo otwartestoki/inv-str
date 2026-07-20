@@ -194,6 +194,36 @@
       max-height: 54px;
       overflow: hidden;
     }
+    .dashboard-range {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto;
+      gap: 10px;
+      align-items: end;
+      margin: 0 0 12px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+    .dashboard-range label {
+      margin: 0;
+    }
+    .dashboard-range input[type="range"] {
+      width: 100%;
+      height: 26px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      accent-color: var(--accent);
+    }
+    .dashboard-range-value {
+      display: block;
+      margin-top: 4px;
+      color: #333;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: none;
+    }
     .tabs {
       display: flex;
       flex-wrap: wrap;
@@ -454,6 +484,9 @@
       .dashboard-grid {
         grid-template-columns: 1fr;
       }
+      .dashboard-range {
+        grid-template-columns: 1fr;
+      }
       .toolbar { align-items: stretch; }
       .control { min-width: 100%; }
       button { width: 100%; }
@@ -491,6 +524,20 @@
       <div class="metric"><span>Realizacja planu</span><strong id="metric-progress">0%</strong><small>realne / planowane</small></div>
       <div class="metric"><span>Salda kont</span><strong id="metric-balance">0</strong><small>ostatni miesiac z wpisanym saldem</small></div>
       <div class="metric"><span>Odchylenie od planu</span><strong id="metric-gap">0</strong><small>saldo realne minus plan</small></div>
+    </section>
+
+    <section class="dashboard-range" aria-label="Zakres danych na wykresach">
+      <label>
+        Zakres od
+        <input id="dashboard-range-start" type="range" min="0" max="0" value="0">
+        <span class="dashboard-range-value" id="dashboard-range-start-label">-</span>
+      </label>
+      <label>
+        Zakres do
+        <input id="dashboard-range-end" type="range" min="0" max="0" value="0">
+        <span class="dashboard-range-value" id="dashboard-range-end-label">-</span>
+      </label>
+      <button id="dashboard-range-reset" class="secondary" type="button">Pelny zakres</button>
     </section>
 
     <section class="dashboard-grid" aria-label="Dashboard budzetu">
@@ -682,6 +729,12 @@
         annual: document.getElementById("chart-annual-legend"),
         costs: document.getElementById("chart-costs-legend")
       };
+      const dashboardRangeStartEl = document.getElementById("dashboard-range-start");
+      const dashboardRangeEndEl = document.getElementById("dashboard-range-end");
+      const dashboardRangeStartLabelEl = document.getElementById("dashboard-range-start-label");
+      const dashboardRangeEndLabelEl = document.getElementById("dashboard-range-end-label");
+      const dashboardRangeResetEl = document.getElementById("dashboard-range-reset");
+      const dashboardRangeKey = "invStrBudgetPlanner.dashboardRange";
 
       function emptyMonth() {
         return { balance: {} };
@@ -891,6 +944,46 @@
             };
           });
         });
+      }
+
+      function dashboardRange(total) {
+        const fallback = { start: 0, end: Math.max(0, total - 1) };
+        if (total <= 0) {
+          return fallback;
+        }
+        try {
+          const parsed = JSON.parse(localStorage.getItem(dashboardRangeKey) || "{}");
+          const start = Math.max(0, Math.min(total - 1, Number(parsed.start)));
+          const end = Math.max(0, Math.min(total - 1, Number(parsed.end)));
+          if (Number.isFinite(start) && Number.isFinite(end)) {
+            return start <= end ? { start: start, end: end } : { start: end, end: start };
+          }
+        } catch (error) {}
+        return fallback;
+      }
+
+      function saveDashboardRange(range) {
+        localStorage.setItem(dashboardRangeKey, JSON.stringify(range));
+      }
+
+      function updateDashboardRangeControls(months, range) {
+        const max = Math.max(0, months.length - 1);
+        [dashboardRangeStartEl, dashboardRangeEndEl].forEach(function (input) {
+          input.min = "0";
+          input.max = String(max);
+          input.disabled = months.length <= 1;
+        });
+        dashboardRangeStartEl.value = String(range.start);
+        dashboardRangeEndEl.value = String(range.end);
+        dashboardRangeStartLabelEl.textContent = months[range.start] ? months[range.start].label : "-";
+        dashboardRangeEndLabelEl.textContent = months[range.end] ? months[range.end].label : "-";
+      }
+
+      function selectedDashboardMonths() {
+        const months = allBudgetMonths();
+        const range = dashboardRange(months.length);
+        updateDashboardRangeControls(months, range);
+        return months.slice(range.start, range.end + 1);
       }
 
       function setupChart(canvas) {
@@ -1328,7 +1421,7 @@
       }
 
       function renderDashboard() {
-        const months = allBudgetMonths();
+        const months = selectedDashboardMonths();
         const labels = months.map(function (point) { return point.label; });
         const balanceTotals = months.map(function (point) {
           const total = monthBalanceTotal(point.month);
@@ -1360,15 +1453,20 @@
               values: months.map(function (point) { return numberValue(point.month.balance && point.month.balance[key]); })
             };
           });
-        const years = Object.keys(state.years).sort();
+        const selectedYears = new Set(months.map(function (point) { return String(point.year); }));
+        const years = Object.keys(state.years).sort().filter(function (year) {
+          return selectedYears.has(year);
+        });
         const annualIncome = years.map(function (year) {
-          const data = normalizeYearData(state.years[year]);
-          const value = data.months.reduce(function (sum, month) { return sum + monthIncome(month); }, 0);
+          const value = months
+            .filter(function (point) { return String(point.year) === year; })
+            .reduce(function (sum, point) { return sum + monthIncome(point.month); }, 0);
           return value > 0 ? value : NaN;
         });
         const annualCosts = years.map(function (year) {
-          const data = normalizeYearData(state.years[year]);
-          const value = data.months.reduce(function (sum, month) { return sum + monthPlannedCosts(month); }, 0);
+          const value = months
+            .filter(function (point) { return String(point.year) === year; })
+            .reduce(function (sum, point) { return sum + monthPlannedCosts(point.month); }, 0);
           return value > 0 ? value : NaN;
         });
 
@@ -1601,6 +1699,38 @@
         button.addEventListener("click", function () {
           togglePanel(button.dataset.panelToggle);
         });
+      });
+
+      function updateDashboardRangeFromInputs(changed) {
+        const months = allBudgetMonths();
+        let start = Number(dashboardRangeStartEl.value);
+        let end = Number(dashboardRangeEndEl.value);
+        if (changed === "start" && start > end) {
+          end = start;
+        }
+        if (changed === "end" && end < start) {
+          start = end;
+        }
+        const range = { start: start, end: end };
+        saveDashboardRange(range);
+        updateDashboardRangeControls(months, range);
+        renderDashboard();
+      }
+
+      dashboardRangeStartEl.addEventListener("input", function () {
+        updateDashboardRangeFromInputs("start");
+      });
+
+      dashboardRangeEndEl.addEventListener("input", function () {
+        updateDashboardRangeFromInputs("end");
+      });
+
+      dashboardRangeResetEl.addEventListener("click", function () {
+        const months = allBudgetMonths();
+        const range = { start: 0, end: Math.max(0, months.length - 1) };
+        saveDashboardRange(range);
+        updateDashboardRangeControls(months, range);
+        renderDashboard();
       });
 
       window.addEventListener("resize", function () {
