@@ -229,6 +229,32 @@
       font-size: 14px;
       font-weight: 700;
     }
+    .target-summary {
+      margin: 0 0 14px;
+      padding: 11px 12px;
+      border: 1px solid #e6e1d6;
+      background: #fbfaf6;
+      color: #333;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .target-summary strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+    .target-summary span {
+      display: inline-block;
+      margin: 0 12px 3px 0;
+      white-space: nowrap;
+    }
+    .target-summary em {
+      display: block;
+      margin-top: 5px;
+      color: #7a4b12;
+      font-style: normal;
+      font-weight: 600;
+    }
     .rebalance-table-wrap {
       overflow-x: auto;
     }
@@ -465,6 +491,7 @@
         </label>
         <span class="rebalance-total" id="rebalance-total">Suma portfela: 0.00</span>
       </div>
+      <div class="target-summary" id="rebalance-target-summary"></div>
       <div class="currency-view" aria-label="Szacunkowa ekspozycja walutowa">
         <div class="currency-pie-block">
           <div class="currency-pie" id="currency-pie-current"></div>
@@ -639,6 +666,7 @@
       const currencyTargetPlnEl = document.getElementById("currency-target-pln");
       const currencyTargetForeignEl = document.getElementById("currency-target-foreign");
       const allocationChartEl = document.getElementById("allocation-compare-chart");
+      const targetSummaryEl = document.getElementById("rebalance-target-summary");
       const leverageWarningEl = document.getElementById("leverage-warning");
       const leverageWarningTextEl = document.getElementById("leverage-warning-text");
       const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
@@ -869,6 +897,19 @@
           label: payload.label || strategyLabels[key] || key,
           weights: payload.weights || allocation.weights || {}
         };
+      }
+
+      function strategyWeights(key) {
+        const strategies = allocation.strategies || {};
+        const payload = strategies[key] || {};
+        return payload.weights || allocation.weights || {};
+      }
+
+      function sameStrategyWeights(left, right) {
+        const keys = ["us_equity", "world_equity", "tech_equity", "fixed_bond", "long_bond", "floating_bond", "gold"];
+        return keys.every(function (key) {
+          return Math.abs(Number(left[key] || 0) - Number(right[key] || 0)) < 0.0005;
+        });
       }
 
       function isLeverageActive(weights) {
@@ -1192,6 +1233,21 @@
         }
       }
 
+      function updateTargetSummary(targets) {
+        if (!targetSummaryEl) {
+          return;
+        }
+        const selected = selectedStrategyPayload();
+        const sameAsBase = selected.key !== "strategy" && sameStrategyWeights(selected.weights || {}, strategyWeights("strategy"));
+        const rows = resultRows.map(function (item) {
+          return "<span>" + item.label + ": " + pct(Number(targets[item.key] || 0)) + "</span>";
+        }).join("");
+        targetSummaryEl.innerHTML =
+          "<strong>Cel wybranej strategii: " + selected.label + "</strong>" +
+          rows +
+          (sameAsBase ? "<em>Ten wariant ma obecnie takie same wagi jak strategia bazowa, dlatego rekomendowane transakcje sie nie zmieniaja.</em>" : "");
+      }
+
       function calculate() {
         updateStrategyDate();
         updateEquityCharts();
@@ -1206,6 +1262,7 @@
         resultsEl.innerHTML = "";
         let suggestedBuys = 0;
         let suggestedSells = 0;
+        updateTargetSummary(targets);
         updateCurrencyChart(current, targets, total);
         updateAllocationChart(display, targets, total);
         updateLeveragedRebalance(total, Number(targets.stocks || 0), display);
