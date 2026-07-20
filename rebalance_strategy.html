@@ -487,7 +487,7 @@
         <button type="button" class="secondary" id="rebalance-clear">Wyczysc</button>
         <label class="rebalance-option">
           <input type="checkbox" id="rebalance-lock-fixed" checked>
-          Nie sprzedawaj obligacji stalo % / duration
+          Nie sprzedawaj obligacji stalo % / zagranicznych
         </label>
         <span class="rebalance-total" id="rebalance-total">Suma portfela: 0.00</span>
       </div>
@@ -644,7 +644,7 @@
       ];
       const storageKey = "invStrManualPortfolio.v4";
       const rebalanceThreshold = 0.05;
-      const durationLockKeys = ["pl_fixed", "foreign_fixed"];
+      const durationLockKeys = ["pl_fixed", "foreign_fixed", "foreign_float"];
       const inputsEl = document.getElementById("rebalance-inputs");
       const resultsEl = document.getElementById("rebalance-results");
       const leveragedInputsEl = document.getElementById("leveraged-inputs");
