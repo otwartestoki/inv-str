@@ -127,16 +127,41 @@
       background: #fff;
       color: var(--accent);
     }
+    table button {
+      height: 24px;
+      padding: 0 10px;
+      font-size: 12px;
+    }
     .chart {
       display: block;
       width: 100%;
-      height: 360px;
+      height: 260px;
+    }
+    .chart-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 10px;
+      padding: 10px;
+    }
+    .chart-card {
+      border: 1px solid #e7e1d8;
+      border-radius: 8px;
+      background: #fff;
+      padding: 10px;
+    }
+    .chart-card h3 {
+      margin: 0 0 6px;
+      font-size: 14px;
+    }
+    .chart-card p {
+      margin: 0 0 8px;
+      font-size: 12px;
     }
     .legend {
       display: flex;
       flex-wrap: wrap;
       gap: 8px 14px;
-      padding: 0 12px 12px;
+      padding: 0;
       color: #444;
       font-size: 12px;
     }
@@ -156,7 +181,7 @@
     }
     table {
       width: 100%;
-      min-width: 1040px;
+      min-width: 1120px;
       border-collapse: collapse;
       font-size: 12px;
     }
@@ -196,6 +221,9 @@
     }
     .good { color: var(--good); font-weight: 700; }
     .bad { color: var(--bad); font-weight: 700; }
+    .scenario-table {
+      min-width: 760px;
+    }
     @media (max-width: 760px) {
       main { padding: 22px 14px 42px; }
       button { width: 100%; }
@@ -248,22 +276,51 @@
           <input id="zus-growth" inputmode="decimal">
         </label>
         <button id="recalculate" type="button">Przelicz projekcje</button>
-        <button id="reset" class="secondary" type="button">Przywroc dane startowe</button>
+        <button id="reset" class="secondary" type="button">Reset danych</button>
       </div>
     </section>
 
     <section class="panel">
       <div class="panel-head">
-        <h2>Saldo i roczne przeplywy</h2>
-        <p>Saldo jest po oszczednosciach lub pobraniu brakujacej kwoty oraz po wzroscie kapitalu wedlug CAGR strategii.</p>
+        <h2>Najwazniejsze wykresy</h2>
+        <p>Kapital, wydatki i roczne oszczedzanie sa rozdzielone, zeby kazdy wykres mial wlasna czytelna skale.</p>
       </div>
-      <canvas class="chart" id="retirement-chart"></canvas>
-      <div class="legend">
-        <span><i style="background:#173b57"></i>Saldo na koniec roku</span>
-        <span><i style="background:#2f6fdd"></i>Przychod z pracy</span>
-        <span><i style="background:#d6453d"></i>Wydatki</span>
-        <span><i style="background:#0b6e4f"></i>ZUS</span>
-        <span><i style="background:#b45309"></i>Pobor z oszczednosci</span>
+      <div class="chart-grid">
+        <div class="chart-card">
+          <h3>Ile bede mial pieniedzy</h3>
+          <p>Saldo portfela na koniec roku, w tys. PLN.</p>
+          <canvas class="chart" id="balance-chart"></canvas>
+          <div class="legend"><span><i style="background:#173b57"></i>Saldo portfela</span></div>
+        </div>
+        <div class="chart-card">
+          <h3>Ile bede wydawal i jakie bede mial przychody</h3>
+          <p>Wydatki kontra przychod z pracy oraz ZUS, w tys. PLN rocznie.</p>
+          <canvas class="chart" id="income-expense-chart"></canvas>
+          <div class="legend">
+            <span><i style="background:#d6453d"></i>Wydatki</span>
+            <span><i style="background:#2f6fdd"></i>Praca</span>
+            <span><i style="background:#0b6e4f"></i>ZUS</span>
+          </div>
+        </div>
+        <div class="chart-card">
+          <h3>Ile bede oszczedzal albo pobieral</h3>
+          <p>Dodatnia wartosc oznacza oszczedzanie, ujemna finansowanie zycia z portfela.</p>
+          <canvas class="chart" id="cashflow-chart"></canvas>
+          <div class="legend">
+            <span><i style="background:#0b6e4f"></i>Oszczednosc</span>
+            <span><i style="background:#b45309"></i>Pobor z portfela</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Symulacja wieku przejscia na emeryture</h2>
+        <p>Porownanie pokazuje, jak zmienia sie saldo i maksymalny pobor z portfela przy roznych momentach zakonczenia pracy.</p>
+      </div>
+      <div class="table-wrap">
+        <table class="scenario-table" id="scenario-table"></table>
       </div>
     </section>
 
@@ -352,7 +409,12 @@
 
       let state = loadState();
       const tableEl = document.getElementById("retirement-table");
-      const chartEl = document.getElementById("retirement-chart");
+      const scenarioTableEl = document.getElementById("scenario-table");
+      const chartEls = {
+        balance: document.getElementById("balance-chart"),
+        incomeExpense: document.getElementById("income-expense-chart"),
+        cashflow: document.getElementById("cashflow-chart")
+      };
       const inputs = {
         baseYear: document.getElementById("base-year"),
         baseAge: document.getElementById("base-age"),
@@ -428,17 +490,16 @@
         });
       }
 
-      function projectRows() {
-        readAssumptions();
-        const a = state.assumptions;
-        const baseIndex = state.rows.findIndex(function (row) {
+      function projectedRowsFor(assumptions) {
+        const a = Object.assign({}, assumptions);
+        const sourceRows = state.rows.length ? state.rows : defaults.rows;
+        const baseIndex = sourceRows.findIndex(function (row) {
           return Number(row.year) === Number(a.baseYear);
         });
         if (baseIndex < 0) {
-          alert("Nie znaleziono roku bazowego w tabeli.");
-          return;
+          return [];
         }
-        const rows = state.rows.map(function (row, index) {
+        const rows = sourceRows.map(function (row, index) {
           return index <= baseIndex ? clone(row) : {
             age: a.baseAge + (row.year - a.baseYear),
             year: row.year,
@@ -474,6 +535,16 @@
           const cashFlow = numberValue(row.saving) - numberValue(row.withdrawal);
           row.balance = Math.round(Math.max(0, numberValue(previous.balance) * (1 + a.strategyCagr / 100) + cashFlow));
         }
+        return rows;
+      }
+
+      function projectRows() {
+        readAssumptions();
+        const rows = projectedRowsFor(state.assumptions);
+        if (!rows.length) {
+          alert("Nie znaleziono roku bazowego w tabeli.");
+          return;
+        }
         state.rows = rows;
         saveState();
         render();
@@ -492,11 +563,53 @@
         document.getElementById("metric-max-withdrawal").textContent = fmt(maxWithdrawal);
       }
 
+      function scenarioSummary(age) {
+        const assumptions = Object.assign({}, state.assumptions, { workUntilAge: age });
+        const rows = projectedRowsFor(assumptions);
+        const row65 = rows.find(function (row) { return Number(row.age) === 65; });
+        const row85 = rows.find(function (row) { return Number(row.age) === 85; });
+        const maxWithdrawal = Math.max.apply(null, rows.map(function (row) { return numberValue(row.withdrawal); }));
+        const totalWithdrawal = rows.reduce(function (sum, row) { return sum + numberValue(row.withdrawal); }, 0);
+        const firstDepletion = rows.find(function (row) { return numberValue(row.balance) <= 0; });
+        return {
+          age: age,
+          balance65: row65 ? numberValue(row65.balance) : 0,
+          balance85: row85 ? numberValue(row85.balance) : 0,
+          maxWithdrawal: maxWithdrawal,
+          totalWithdrawal: totalWithdrawal,
+          depletionYear: firstDepletion ? firstDepletion.year : ""
+        };
+      }
+
+      function renderScenarios() {
+        const current = Number(state.assumptions.workUntilAge);
+        const ages = Array.from(new Set([50, 55, 58, 60, 62, 65, current]))
+          .filter(function (age) { return Number.isFinite(age) && age >= Number(state.assumptions.baseAge); })
+          .sort(function (a, b) { return a - b; });
+        const rows = [];
+        rows.push("<thead><tr><th>Koniec pracy w wieku</th><th>Saldo w wieku 65</th><th>Saldo w wieku 85</th><th>Laczny pobor z portfela</th><th>Najwiekszy roczny pobor</th><th>Rok wyczerpania</th><th>Akcja</th></tr></thead><tbody>");
+        ages.map(scenarioSummary).forEach(function (scenario) {
+          const isCurrent = scenario.age === current;
+          rows.push(`<tr class="${isCurrent ? "is-base" : ""}">`);
+          rows.push(`<td>${fmt(scenario.age)}${isCurrent ? " (obecnie)" : ""}</td>`);
+          rows.push(`<td>${fmt(scenario.balance65)}</td>`);
+          rows.push(`<td class="${scenario.balance85 > 0 ? "good" : "bad"}">${fmt(scenario.balance85)}</td>`);
+          rows.push(`<td>${fmt(scenario.totalWithdrawal)}</td>`);
+          rows.push(`<td>${fmt(scenario.maxWithdrawal)}</td>`);
+          rows.push(`<td class="${scenario.depletionYear ? "bad" : "good"}">${scenario.depletionYear || "brak"}</td>`);
+          rows.push(`<td><button class="secondary" type="button" data-retire-age="${scenario.age}">Ustaw</button></td>`);
+          rows.push("</tr>");
+        });
+        rows.push("</tbody>");
+        scenarioTableEl.innerHTML = rows.join("");
+      }
+
       function renderTable() {
         const a = state.assumptions;
         const rows = [];
-        rows.push("<thead><tr><th>Wiek J&E</th><th>Rok</th><th>Wydatki</th><th>Przychod</th><th>Saldo na koniec roku</th><th>Oszczednosc</th><th>ZUS</th><th>Pobor z oszczednosci</th></tr></thead><tbody>");
+        rows.push("<thead><tr><th>Wiek J&E</th><th>Rok</th><th>Wydatki</th><th>Przychod</th><th>Saldo na koniec roku</th><th>Oszczednosc</th><th>ZUS</th><th>Pobor z oszczednosci</th><th>Przeplyw netto</th></tr></thead><tbody>");
         state.rows.forEach(function (row) {
+          const netFlow = numberValue(row.saving) - numberValue(row.withdrawal);
           const classes = [
             Number(row.year) === Number(a.baseYear) ? "is-base" : "",
             Number(row.age) > Number(a.workUntilAge) ? "is-retired" : ""
@@ -510,57 +623,58 @@
           rows.push(`<td class="${numberValue(row.saving) >= 0 ? "good" : "bad"}">${fmt(row.saving)}</td>`);
           rows.push(`<td>${fmt(row.zus)}</td>`);
           rows.push(`<td class="${numberValue(row.withdrawal) > 0 ? "bad" : "good"}">${fmt(row.withdrawal)}</td>`);
+          rows.push(`<td class="${netFlow >= 0 ? "good" : "bad"}">${fmt(netFlow)}</td>`);
           rows.push("</tr>");
         });
         rows.push("</tbody>");
         tableEl.innerHTML = rows.join("");
       }
 
-      function setupChart() {
-        const rect = chartEl.getBoundingClientRect();
+      function setupChart(canvas) {
+        const rect = canvas.getBoundingClientRect();
         const width = Math.max(320, Math.floor(rect.width));
-        const height = Math.max(300, Math.floor(rect.height || 360));
+        const height = Math.max(240, Math.floor(rect.height || 260));
         const dpr = window.devicePixelRatio || 1;
-        chartEl.width = width * dpr;
-        chartEl.height = height * dpr;
-        const ctx = chartEl.getContext("2d");
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        const ctx = canvas.getContext("2d");
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, width, height);
         ctx.font = "11px Segoe UI, Arial, sans-serif";
-        return { ctx, width, height, left: 58, right: 16, top: 16, bottom: 34 };
+        return { ctx, width, height, left: 58, right: 16, top: 12, bottom: 32 };
       }
 
-      function drawChart() {
-        const chart = setupChart();
+      function drawAxes(chart, years, minValue, maxValue) {
         const { ctx, width, height, left, right, top, bottom } = chart;
         const plotW = width - left - right;
         const plotH = height - top - bottom;
-        const years = state.rows.map(function (row) { return row.year; });
-        const balances = state.rows.map(function (row) { return numberValue(row.balance); });
-        const flows = state.rows.flatMap(function (row) {
-          return [numberValue(row.expenses), numberValue(row.income), numberValue(row.zus), numberValue(row.withdrawal)];
-        });
-        const maxValue = Math.max.apply(null, balances.concat(flows, [1])) * 1.08;
-        const xFor = function (index) { return left + index / Math.max(1, years.length - 1) * plotW; };
-        const yFor = function (value) { return top + plotH - value / maxValue * plotH; };
         ctx.strokeStyle = "#e4dfd6";
         ctx.fillStyle = "#555";
         ctx.textAlign = "right";
         ctx.textBaseline = "middle";
         for (let i = 0; i <= 5; i += 1) {
-          const value = maxValue * i / 5;
-          const y = yFor(value);
+          const value = minValue + (maxValue - minValue) * i / 5;
+          const y = top + plotH - (value - minValue) / Math.max(1, maxValue - minValue) * plotH;
           ctx.beginPath();
           ctx.moveTo(left, y);
           ctx.lineTo(left + plotW, y);
           ctx.stroke();
           ctx.fillText(fmt(value), left - 8, y);
         }
+        if (minValue < 0 && maxValue > 0) {
+          const zeroY = top + plotH - (0 - minValue) / Math.max(1, maxValue - minValue) * plotH;
+          ctx.strokeStyle = "#777";
+          ctx.beginPath();
+          ctx.moveTo(left, zeroY);
+          ctx.lineTo(left + plotW, zeroY);
+          ctx.stroke();
+        }
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
         years.forEach(function (year, index) {
           if (index % 5 === 0 || index === years.length - 1) {
-            ctx.fillText(String(year), xFor(index), top + plotH + 9);
+            const x = left + index / Math.max(1, years.length - 1) * plotW;
+            ctx.fillText(String(year), x, top + plotH + 9);
           }
         });
         ctx.strokeStyle = "#333";
@@ -569,40 +683,91 @@
         ctx.lineTo(left, top + plotH);
         ctx.lineTo(left + plotW, top + plotH);
         ctx.stroke();
+      }
 
-        const barSeries = [
-          { key: "income", color: "rgba(47,111,221,0.50)" },
-          { key: "expenses", color: "rgba(214,69,61,0.50)" },
-          { key: "zus", color: "rgba(11,110,79,0.55)" },
-          { key: "withdrawal", color: "rgba(180,83,9,0.55)" }
-        ];
-        const groupW = plotW / Math.max(1, years.length);
-        const barW = Math.max(2, Math.min(6, groupW / 5));
-        barSeries.forEach(function (series, seriesIndex) {
-          ctx.fillStyle = series.color;
-          state.rows.forEach(function (row, index) {
-            const value = numberValue(row[series.key]);
-            if (!value) return;
-            const x = left + index * groupW + groupW / 2 + (seriesIndex - 1.5) * barW;
-            const y = yFor(value);
-            ctx.fillRect(x - barW / 2, y, barW, top + plotH - y);
-          });
-        });
-        ctx.strokeStyle = "#173b57";
-        ctx.lineWidth = 2.5;
+      function drawLineSeries(chart, years, values, color, minValue, maxValue) {
+        const { ctx, width, height, left, right, top, bottom } = chart;
+        const plotW = width - left - right;
+        const plotH = height - top - bottom;
+        const xFor = function (index) { return left + index / Math.max(1, years.length - 1) * plotW; };
+        const yFor = function (value) { return top + plotH - (value - minValue) / Math.max(1, maxValue - minValue) * plotH; };
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.4;
         ctx.beginPath();
-        balances.forEach(function (value, index) {
-          const x = xFor(index);
-          const y = yFor(value);
-          if (index === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
+        let started = false;
+        values.forEach(function (value, index) {
+          if (!Number.isFinite(value)) {
+            started = false;
+            return;
+          }
+          if (!started) {
+            ctx.moveTo(xFor(index), yFor(value));
+            started = true;
+          } else {
+            ctx.lineTo(xFor(index), yFor(value));
+          }
         });
         ctx.stroke();
+      }
+
+      function drawBalanceChart() {
+        const chart = setupChart(chartEls.balance);
+        const years = state.rows.map(function (row) { return row.year; });
+        const balances = state.rows.map(function (row) { return numberValue(row.balance); });
+        const maxValue = Math.max.apply(null, balances.concat([1])) * 1.08;
+        drawAxes(chart, years, 0, maxValue);
+        drawLineSeries(chart, years, balances, "#173b57", 0, maxValue);
+      }
+
+      function drawIncomeExpenseChart() {
+        const chart = setupChart(chartEls.incomeExpense);
+        const years = state.rows.map(function (row) { return row.year; });
+        const expenses = state.rows.map(function (row) { return numberValue(row.expenses) || NaN; });
+        const income = state.rows.map(function (row) { return numberValue(row.income) || NaN; });
+        const zus = state.rows.map(function (row) { return numberValue(row.zus) || NaN; });
+        const maxValue = Math.max.apply(null, expenses.concat(income, zus).filter(Number.isFinite).concat([1])) * 1.12;
+        drawAxes(chart, years, 0, maxValue);
+        drawLineSeries(chart, years, expenses, "#d6453d", 0, maxValue);
+        drawLineSeries(chart, years, income, "#2f6fdd", 0, maxValue);
+        drawLineSeries(chart, years, zus, "#0b6e4f", 0, maxValue);
+      }
+
+      function drawCashflowChart() {
+        const chart = setupChart(chartEls.cashflow);
+        const { ctx, width, height, left, right, top, bottom } = chart;
+        const years = state.rows.map(function (row) { return row.year; });
+        const values = state.rows.map(function (row) {
+          return numberValue(row.saving) - numberValue(row.withdrawal);
+        });
+        const maxAbs = Math.max.apply(null, values.map(Math.abs).concat([1]));
+        const minValue = -maxAbs * 1.15;
+        const maxValue = maxAbs * 1.15;
+        const plotW = width - left - right;
+        const plotH = height - top - bottom;
+        const groupW = plotW / Math.max(1, years.length);
+        const barW = Math.max(2, Math.min(8, groupW * 0.6));
+        const xFor = function (index) { return left + index * groupW + groupW / 2; };
+        const yFor = function (value) { return top + plotH - (value - minValue) / Math.max(1, maxValue - minValue) * plotH; };
+        drawAxes(chart, years, minValue, maxValue);
+        const zeroY = yFor(0);
+        values.forEach(function (value, index) {
+          if (!value) return;
+          const y = yFor(value);
+          ctx.fillStyle = value >= 0 ? "#0b6e4f" : "#b45309";
+          ctx.fillRect(xFor(index) - barW / 2, Math.min(y, zeroY), barW, Math.max(1, Math.abs(zeroY - y)));
+        });
+      }
+
+      function drawChart() {
+        drawBalanceChart();
+        drawIncomeExpenseChart();
+        drawCashflowChart();
       }
 
       function render() {
         writeAssumptions();
         renderMetrics();
+        renderScenarios();
         renderTable();
         drawChart();
       }
@@ -612,7 +777,16 @@
           readAssumptions();
           saveState();
           renderMetrics();
+          renderScenarios();
         });
+      });
+      scenarioTableEl.addEventListener("click", function (event) {
+        const button = event.target.closest("[data-retire-age]");
+        if (!button) {
+          return;
+        }
+        inputs.workUntilAge.value = button.dataset.retireAge;
+        projectRows();
       });
       document.getElementById("recalculate").addEventListener("click", projectRows);
       document.getElementById("reset").addEventListener("click", function () {
