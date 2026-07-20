@@ -576,9 +576,86 @@
         if (value === null || value === undefined || value === "") {
           return 0;
         }
-        const normalized = String(value).replace(/\s/g, "").replace("zl", "").replace(",", ".");
+        const normalized = String(value).replace(/\s/g, "").replace(/zł|zl/gi, "").replace(",", ".");
+        if (normalized.startsWith("=")) {
+          return formulaValue(normalized.slice(1));
+        }
         const parsed = Number(normalized);
         return Number.isFinite(parsed) ? parsed : 0;
+      }
+
+      function formulaValue(expression) {
+        const text = String(expression || "").replace(",", ".");
+        if (!/^[0-9+\-*/().\s]+$/.test(text)) {
+          return 0;
+        }
+        let index = 0;
+        function peek() {
+          return text[index];
+        }
+        function consume(char) {
+          if (text[index] === char) {
+            index += 1;
+            return true;
+          }
+          return false;
+        }
+        function skipSpaces() {
+          while (text[index] === " ") {
+            index += 1;
+          }
+        }
+        function parseNumber() {
+          skipSpaces();
+          const start = index;
+          while (/[0-9.]/.test(peek())) {
+            index += 1;
+          }
+          const value = Number(text.slice(start, index));
+          return Number.isFinite(value) ? value : 0;
+        }
+        function parseFactor() {
+          skipSpaces();
+          if (consume("+")) return parseFactor();
+          if (consume("-")) return -parseFactor();
+          if (consume("(")) {
+            const value = parseExpression();
+            skipSpaces();
+            consume(")");
+            return value;
+          }
+          return parseNumber();
+        }
+        function parseTerm() {
+          let value = parseFactor();
+          while (true) {
+            skipSpaces();
+            if (consume("*")) {
+              value *= parseFactor();
+            } else if (consume("/")) {
+              const divisor = parseFactor();
+              value = divisor ? value / divisor : 0;
+            } else {
+              return value;
+            }
+          }
+        }
+        function parseExpression() {
+          let value = parseTerm();
+          while (true) {
+            skipSpaces();
+            if (consume("+")) {
+              value += parseTerm();
+            } else if (consume("-")) {
+              value -= parseTerm();
+            } else {
+              return value;
+            }
+          }
+        }
+        const result = parseExpression();
+        skipSpaces();
+        return index >= text.length && Number.isFinite(result) ? result : 0;
       }
 
       function hasValue(value) {
