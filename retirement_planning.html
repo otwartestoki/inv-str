@@ -302,6 +302,10 @@
           <input id="zus-start-age" inputmode="numeric">
           <span class="field-hint">Od tego wieku pojawia sie przychod z ZUS.</span>
         </label>
+        <label>ZUS jako % ostatniej pensji
+          <input id="zus-replacement-rate" inputmode="decimal">
+          <span class="field-hint">Domyslnie 20% prognozowanego przychodu z pracy w wieku startu ZUS.</span>
+        </label>
         <label>Wzrost ZUS
           <input id="zus-growth" inputmode="decimal">
           <span class="field-hint">Roczna waloryzacja ZUS w projekcji, nominalnie.</span>
@@ -310,7 +314,7 @@
         <button id="reset" class="secondary" type="button">Reset danych</button>
       </div>
       <div class="method-note">
-        <strong>Jak czytac zalozenia:</strong> CPI opisuje ogolny wzrost cen. Wydatki rosna nominalnie o CPI plus wzrost wydatkow ponad CPI, czyli osobno mozesz zasymulowac inflacje stylu zycia. Przychody z pracy rosna nominalnie o CPI plus wpisany wzrost przychodow, wiec pole wzrostu przychodow jest realnym wzrostem ponad inflacje. Jesli wpisujesz inflacje 2,5% i CAGR strategii 7%, model zaklada nominalny zwrot portfela 7%, czyli realnie okolo 4,4% przed podatkami i kosztami. Wzrost ZUS to zalozona nominalna waloryzacja swiadczenia po rozpoczeciu emerytury.
+        <strong>Jak czytac zalozenia:</strong> CPI opisuje ogolny wzrost cen. Wydatki rosna nominalnie o CPI plus wzrost wydatkow ponad CPI, czyli osobno mozesz zasymulowac inflacje stylu zycia. Przychody z pracy rosna nominalnie o CPI plus wpisany wzrost przychodow, wiec pole wzrostu przychodow jest realnym wzrostem ponad inflacje. Pierwszy ZUS jest liczony jako procent prognozowanej pensji w wieku startu ZUS, a potem rosnie o wpisana waloryzacje ZUS. Jesli wpisujesz inflacje 2,5% i CAGR strategii 7%, model zaklada nominalny zwrot portfela 7%, czyli realnie okolo 4,4% przed podatkami i kosztami.
       </div>
     </section>
 
@@ -373,7 +377,7 @@
   <script>
     (function () {
       const storageKey = "invStrRetirementPlanner.v1";
-      const modelVersion = 3;
+      const modelVersion = 4;
       const seedRows = [
         [35, 2021, 142, 174, 87, 32, "", ""],
         [36, 2022, 171, 193, 82, 22, "", ""],
@@ -439,6 +443,7 @@
           strategyCagr: 7.0,
           workUntilAge: 60,
           zusStartAge: 65,
+          zusReplacementRate: 20.0,
           zusGrowth: 5.0
         },
         rows: seedRows.map(rowFromArray)
@@ -461,6 +466,7 @@
         strategyCagr: document.getElementById("strategy-cagr"),
         workUntilAge: document.getElementById("work-until-age"),
         zusStartAge: document.getElementById("zus-start-age"),
+        zusReplacementRate: document.getElementById("zus-replacement-rate"),
         zusGrowth: document.getElementById("zus-growth")
       };
 
@@ -524,10 +530,16 @@
 
       function writeAssumptions() {
         Object.keys(inputs).forEach(function (key) {
-          inputs[key].value = ["cpiRate", "expenseLifestyleGrowth", "incomeGrowth", "strategyCagr", "zusGrowth"].includes(key)
+          inputs[key].value = ["cpiRate", "expenseLifestyleGrowth", "incomeGrowth", "strategyCagr", "zusReplacementRate", "zusGrowth"].includes(key)
             ? pctInput(state.assumptions[key])
             : state.assumptions[key];
         });
+      }
+
+      function projectedWorkIncomeAtAge(assumptions, baseRow, targetAge) {
+        const years = Math.max(0, Number(targetAge) - Number(assumptions.baseAge));
+        const growth = 1 + (numberValue(assumptions.cpiRate) + numberValue(assumptions.incomeGrowth)) / 100;
+        return numberValue(baseRow.income) * Math.pow(growth, years);
       }
 
       function projectedRowsFor(assumptions) {
@@ -551,6 +563,7 @@
             withdrawal: ""
           };
         });
+        const initialZus = projectedWorkIncomeAtAge(a, rows[baseIndex], a.zusStartAge) * a.zusReplacementRate / 100;
         for (let i = baseIndex + 1; i < rows.length; i += 1) {
           const previous = rows[i - 1];
           const row = rows[i];
@@ -565,7 +578,7 @@
             row.saving = "";
             const previousZus = numberValue(previous.zus);
             if (row.age >= a.zusStartAge) {
-              row.zus = previousZus > 0 ? Math.round(previousZus * (1 + a.zusGrowth / 100)) : Math.round(row.expenses);
+              row.zus = previousZus > 0 ? Math.round(previousZus * (1 + a.zusGrowth / 100)) : Math.round(initialZus);
               row.withdrawal = Math.max(0, row.expenses - row.zus);
             } else {
               row.zus = "";
