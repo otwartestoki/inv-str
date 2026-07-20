@@ -162,6 +162,29 @@
       background: var(--accent);
       color: #fff;
     }
+    .panel-switches {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      margin: 0 0 10px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .panel-switch {
+      height: 26px;
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+      padding: 0 10px;
+      font-size: 12px;
+    }
+    .panel-switch.is-off {
+      border-color: #c8c1b4;
+      background: #fff;
+      color: #777;
+    }
     .workspace {
       display: grid;
       grid-template-columns: minmax(390px, 0.95fr) minmax(300px, 0.65fr) minmax(500px, 1.1fr);
@@ -174,14 +197,22 @@
       background: var(--panel);
       overflow: hidden;
     }
+    .budget-panel.is-hidden {
+      display: none;
+    }
     .panel-head {
-      min-height: 82px;
+      height: 82px;
       padding: 10px 10px 8px;
       border-bottom: 1px solid var(--line);
       background: #fff;
+      overflow: hidden;
     }
     .panel-head p {
       font-size: 12px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
     .table-wrap {
       overflow-x: auto;
@@ -191,6 +222,7 @@
       min-width: 680px;
       border-collapse: collapse;
       font-size: 12px;
+      table-layout: fixed;
     }
     .narrow table {
       min-width: 500px;
@@ -202,10 +234,13 @@
       border-bottom: 1px solid #e7e1d8;
       border-right: 1px solid #eee8df;
       height: 30px;
+      max-height: 30px;
       padding: 3px 4px;
       text-align: right;
       vertical-align: top;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     th:first-child, td:first-child {
       position: sticky;
@@ -221,8 +256,9 @@
       background: #f1eee6;
       color: #333;
       font-weight: 700;
-      height: 34px;
-      white-space: normal;
+      height: 38px;
+      max-height: 38px;
+      white-space: nowrap;
       line-height: 1.12;
     }
     th:first-child {
@@ -243,6 +279,7 @@
     .warn { color: var(--warn); }
     td input, td textarea {
       min-width: 52px;
+      width: 100%;
       height: 23px;
       padding: 2px 3px;
       border-color: transparent;
@@ -251,11 +288,13 @@
     }
     td textarea {
       min-width: 82px;
+      width: 100%;
       height: 23px;
       min-height: 23px;
       text-align: left;
-      white-space: normal;
+      white-space: nowrap;
       resize: none;
+      overflow: hidden;
     }
     td input:focus, td textarea:focus {
       border-color: var(--accent);
@@ -361,6 +400,13 @@
       <button class="tab-button" type="button" data-tab="income">Wplywy</button>
       <button class="tab-button" type="button" data-tab="saving">Oszczednosci</button>
       <button class="tab-button" type="button" data-tab="balance">Salda</button>
+    </div>
+
+    <div class="panel-switches" aria-label="Widoczne tabele">
+      <span>Widoczne:</span>
+      <button class="panel-switch" type="button" data-panel-toggle="income">Wplywy</button>
+      <button class="panel-switch" type="button" data-panel-toggle="saving">Oszczednosci</button>
+      <button class="panel-switch" type="button" data-panel-toggle="balance">Salda</button>
     </div>
 
     <section class="workspace" data-active-tab="all">
@@ -487,6 +533,8 @@
       const yearNotesEl = document.getElementById("year-notes");
       const workspaceEl = document.querySelector(".workspace");
       const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
+      const panelSwitches = Array.from(document.querySelectorAll(".panel-switch"));
+      const panelWeights = { income: 0.95, saving: 0.65, balance: 1.1 };
 
       function emptyMonth() {
         return { balance: {} };
@@ -834,11 +882,71 @@
 
       function setActiveTab(tab) {
         const nextTab = ["all", "income", "saving", "balance"].includes(tab) ? tab : "all";
+        if (nextTab !== "all") {
+          const visible = new Set(visiblePanelKeys());
+          if (!visible.has(nextTab)) {
+            visible.add(nextTab);
+            saveVisiblePanelKeys(["income", "saving", "balance"].filter(function (panelKey) {
+              return visible.has(panelKey);
+            }));
+          }
+        }
         workspaceEl.dataset.activeTab = nextTab;
         tabButtons.forEach(function (button) {
           button.classList.toggle("is-active", button.dataset.tab === nextTab);
         });
         localStorage.setItem("invStrBudgetPlanner.activeTab", nextTab);
+        updatePanelLayout();
+      }
+
+      function visiblePanelKeys() {
+        const saved = localStorage.getItem("invStrBudgetPlanner.visiblePanels");
+        const parsed = saved ? saved.split(",").filter(Boolean) : ["income", "saving", "balance"];
+        return parsed.length ? parsed : ["income", "saving", "balance"];
+      }
+
+      function saveVisiblePanelKeys(keys) {
+        localStorage.setItem("invStrBudgetPlanner.visiblePanels", keys.join(","));
+      }
+
+      function updatePanelLayout() {
+        const visible = new Set(visiblePanelKeys());
+        document.querySelectorAll(".budget-panel").forEach(function (panel) {
+          const key = panel.dataset.tabPanel;
+          panel.classList.toggle("is-hidden", !visible.has(key));
+        });
+        panelSwitches.forEach(function (button) {
+          button.classList.toggle("is-off", !visible.has(button.dataset.panelToggle));
+        });
+        if (window.innerWidth <= 1480 || workspaceEl.dataset.activeTab !== "all") {
+          workspaceEl.style.gridTemplateColumns = "";
+          return;
+        }
+        const visibleKeys = ["income", "saving", "balance"].filter(function (key) {
+          return visible.has(key);
+        });
+        workspaceEl.style.gridTemplateColumns = visibleKeys.map(function (key) {
+          return "minmax(0, " + panelWeights[key] + "fr)";
+        }).join(" ");
+      }
+
+      function togglePanel(key) {
+        const visible = new Set(visiblePanelKeys());
+        if (visible.has(key)) {
+          if (workspaceEl.dataset.activeTab === key) {
+            return;
+          }
+          if (visible.size <= 1) {
+            return;
+          }
+          visible.delete(key);
+        } else {
+          visible.add(key);
+        }
+        saveVisiblePanelKeys(["income", "saving", "balance"].filter(function (panelKey) {
+          return visible.has(panelKey);
+        }));
+        updatePanelLayout();
       }
 
       function updateFromInput(input, rerender) {
@@ -911,6 +1019,14 @@
         });
       });
 
+      panelSwitches.forEach(function (button) {
+        button.addEventListener("click", function () {
+          togglePanel(button.dataset.panelToggle);
+        });
+      });
+
+      window.addEventListener("resize", updatePanelLayout);
+
       document.getElementById("add-year").addEventListener("click", function () {
         const year = String(numberValue(newYearEl.value || new Date().getFullYear()));
         if (!year || year.length !== 4) {
@@ -976,6 +1092,7 @@
 
       render();
       setActiveTab(localStorage.getItem("invStrBudgetPlanner.activeTab") || "all");
+      updatePanelLayout();
     })();
   </script>
 </body>
