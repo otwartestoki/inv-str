@@ -230,6 +230,9 @@
     .wide table {
       min-width: 760px;
     }
+    #income-table {
+      min-width: 1320px;
+    }
     th, td {
       border-bottom: 1px solid #e7e1d8;
       border-right: 1px solid #eee8df;
@@ -269,6 +272,22 @@
       background: #fbfaf6;
       font-weight: 700;
     }
+    .month-col {
+      width: 58px;
+      min-width: 58px;
+    }
+    .num-col {
+      width: 76px;
+      min-width: 76px;
+    }
+    .calc-col {
+      width: 84px;
+      min-width: 84px;
+    }
+    .comment-col {
+      width: 92px;
+      min-width: 92px;
+    }
     td.readonly {
       background: #fbfaf6;
       color: #333;
@@ -285,6 +304,9 @@
       border-color: transparent;
       background: transparent;
       text-align: right;
+    }
+    td.comment-col input {
+      text-align: left;
     }
     td textarea {
       min-width: 82px;
@@ -346,6 +368,9 @@
       table, .narrow table, .wide table {
         min-width: 760px;
       }
+      #income-table {
+        min-width: 1320px;
+      }
     }
     @media (min-width: 1481px) {
       .tab-button[data-tab="income"],
@@ -388,11 +413,11 @@
     </div>
 
     <section class="summary-grid" aria-label="Podsumowanie roku">
-      <div class="metric"><span>Plan oszczednosci</span><strong id="metric-plan-saving">0 zl</strong><small>prognoza na caly rok</small></div>
-      <div class="metric"><span>Realne oszczednosci</span><strong id="metric-real-saving">0 zl</strong><small>narastajaco z wpisow miesiecznych</small></div>
+      <div class="metric"><span>Plan oszczednosci</span><strong id="metric-plan-saving">0</strong><small>prognoza na caly rok</small></div>
+      <div class="metric"><span>Realne oszczednosci</span><strong id="metric-real-saving">0</strong><small>narastajaco z wpisow miesiecznych</small></div>
       <div class="metric"><span>Realizacja planu</span><strong id="metric-progress">0%</strong><small>realne / planowane</small></div>
-      <div class="metric"><span>Salda kont</span><strong id="metric-balance">0 zl</strong><small>ostatni miesiac z wpisanym saldem</small></div>
-      <div class="metric"><span>Odchylenie od planu</span><strong id="metric-gap">0 zl</strong><small>saldo realne minus plan</small></div>
+      <div class="metric"><span>Salda kont</span><strong id="metric-balance">0</strong><small>ostatni miesiac z wpisanym saldem</small></div>
+      <div class="metric"><span>Odchylenie od planu</span><strong id="metric-gap">0</strong><small>saldo realne minus plan</small></div>
     </section>
 
     <div class="tabs" aria-label="Widok budzetu">
@@ -624,7 +649,7 @@
         if (value === null || value === undefined || value === "") {
           return 0;
         }
-        const normalized = String(value).replace(/\s/g, "").replace(/zł|zl/gi, "").replace(",", ".");
+        const normalized = String(value).replace(/\s/g, "").replace(/zł|zĹ‚|zl/gi, "").replace(",", ".");
         if (normalized.startsWith("=")) {
           return formulaValue(normalized.slice(1));
         }
@@ -711,7 +736,7 @@
       }
 
       function formatMoney(value) {
-        return new Intl.NumberFormat("pl-PL", { maximumFractionDigits: 0 }).format(Math.round(value || 0)) + " zl";
+        return new Intl.NumberFormat("pl-PL", { maximumFractionDigits: 0 }).format(Math.round(value || 0));
       }
 
       function formatPct(value) {
@@ -750,9 +775,8 @@
 
       function inputHtml(section, monthIndex, field, value, text) {
         const safe = value === undefined || value === null ? "" : String(value).replace(/"/g, "&quot;");
-        const type = text ? "textarea" : "input";
-        if (type === "textarea") {
-          return `<textarea data-section="${section}" data-month="${monthIndex}" data-field="${field}">${safe}</textarea>`;
+        if (text) {
+          return `<input data-section="${section}" data-month="${monthIndex}" data-field="${field}" value="${safe}">`;
         }
         return `<input data-section="${section}" data-month="${monthIndex}" data-field="${field}" inputmode="decimal" value="${safe}">`;
       }
@@ -767,22 +791,22 @@
 
       function renderIncomeTable(yearData) {
         const rows = [];
-        rows.push("<thead><tr><th>Miesiac</th>" + incomeFields.map(function ([, label]) { return `<th>${label}</th>`; }).join("") + salaryCommentFields.map(function ([, label]) { return `<th>${label}</th>`; }).join("") + "<th>Wplywy</th><th>Plan koszty</th><th>Prognoza oszcz.</th></tr></thead>");
+        rows.push("<thead><tr><th class=\"month-col\">Miesiac</th>" + incomeFields.map(function ([, label]) { return `<th class="num-col">${label}</th>`; }).join("") + salaryCommentFields.map(function ([, label]) { return `<th class="comment-col">${label}</th>`; }).join("") + "<th class=\"calc-col\">Wplywy</th><th class=\"calc-col\">Plan koszty</th><th class=\"calc-col\">Prognoza oszcz.</th></tr></thead>");
         rows.push("<tbody>");
         yearData.months.forEach(function (month, index) {
           const income = monthIncome(month);
           const costs = monthPlannedCosts(month);
           rows.push("<tr>");
-          rows.push(`<td class="month-cell">${monthLabels[index]} ${state.activeYear}</td>`);
+          rows.push(`<td class="month-cell month-col">${monthLabels[index]} ${state.activeYear}</td>`);
           incomeFields.forEach(function ([key]) {
-            rows.push(`<td>${inputHtml("month", index, key, month[key])}</td>`);
+            rows.push(`<td class="num-col">${inputHtml("month", index, key, month[key])}</td>`);
           });
           salaryCommentFields.forEach(function ([key]) {
-            rows.push(`<td>${inputHtml("month", index, key, month[key], true)}</td>`);
+            rows.push(`<td class="comment-col">${inputHtml("month", index, key, month[key], true)}</td>`);
           });
-          rows.push(`<td class="readonly">${formatMoney(income)}</td>`);
-          rows.push(`<td class="readonly">${formatMoney(costs)}</td>`);
-          rows.push(`<td class="readonly ${monthPlannedSaving(month) >= 0 ? "good" : "bad"}">${formatMoney(monthPlannedSaving(month))}</td>`);
+          rows.push(`<td class="readonly calc-col">${formatMoney(income)}</td>`);
+          rows.push(`<td class="readonly calc-col">${formatMoney(costs)}</td>`);
+          rows.push(`<td class="readonly calc-col ${monthPlannedSaving(month) >= 0 ? "good" : "bad"}">${formatMoney(monthPlannedSaving(month))}</td>`);
           rows.push("</tr>");
         });
         rows.push("</tbody>");
@@ -793,7 +817,7 @@
         let plannedCum = 0;
         let realCum = 0;
         const rows = [];
-        rows.push("<thead><tr><th>Miesiac</th><th>Prognoza</th><th>Prognoza skum.</th><th>Realna oszcz.</th><th>Realna skum.</th><th>Miesiac</th><th>Rok</th></tr></thead><tbody>");
+        rows.push("<thead><tr><th class=\"month-col\">Miesiac</th><th class=\"calc-col\">Prognoza</th><th class=\"calc-col\">Prognoza skum.</th><th class=\"num-col\">Realna oszcz.</th><th class=\"calc-col\">Realna skum.</th><th class=\"num-col\">Miesiac</th><th class=\"num-col\">Rok</th></tr></thead><tbody>");
         yearData.months.forEach(function (month, index) {
           const planned = monthPlannedSaving(month);
           plannedCum += planned;
@@ -804,13 +828,13 @@
           const monthPct = planned !== 0 && realEntered ? numberValue(month.realSaving) / planned : NaN;
           const yearPct = plannedCum !== 0 ? realCum / plannedCum : NaN;
           rows.push("<tr>");
-          rows.push(`<td class="month-cell">${monthLabels[index]}</td>`);
-          rows.push(`<td class="readonly">${formatMoney(planned)}</td>`);
-          rows.push(`<td class="readonly">${formatMoney(plannedCum)}</td>`);
-          rows.push(`<td>${inputHtml("month", index, "realSaving", month.realSaving)}</td>`);
-          rows.push(`<td class="readonly">${realEntered || realCum ? formatMoney(realCum) : "-"}</td>`);
-          rows.push(`<td class="readonly"><span class="badge">${formatPct(monthPct)}</span></td>`);
-          rows.push(`<td class="readonly"><span class="badge">${formatPct(yearPct)}</span></td>`);
+          rows.push(`<td class="month-cell month-col">${monthLabels[index]}</td>`);
+          rows.push(`<td class="readonly calc-col">${formatMoney(planned)}</td>`);
+          rows.push(`<td class="readonly calc-col">${formatMoney(plannedCum)}</td>`);
+          rows.push(`<td class="num-col">${inputHtml("month", index, "realSaving", month.realSaving)}</td>`);
+          rows.push(`<td class="readonly calc-col">${realEntered || realCum ? formatMoney(realCum) : "-"}</td>`);
+          rows.push(`<td class="readonly num-col"><span class="badge">${formatPct(monthPct)}</span></td>`);
+          rows.push(`<td class="readonly num-col"><span class="badge">${formatPct(yearPct)}</span></td>`);
           rows.push("</tr>");
         });
         rows.push("</tbody>");
@@ -819,18 +843,18 @@
 
       function renderBalanceTable(yearData) {
         const rows = [];
-        rows.push("<thead><tr><th>Miesiac</th>" + balanceFields.map(function ([, label]) { return `<th>${label}</th>`; }).join("") + "<th>Suma realna</th><th>Roznica</th></tr></thead><tbody>");
+        rows.push("<thead><tr><th class=\"month-col\">Miesiac</th>" + balanceFields.map(function ([, label]) { return `<th class="num-col">${label}</th>`; }).join("") + "<th class=\"calc-col\">Suma realna</th><th class=\"calc-col\">Roznica</th></tr></thead><tbody>");
         yearData.months.forEach(function (month, index) {
           const balance = month.balance || {};
           const total = monthBalanceTotal(month);
           const planned = numberValue(balance.plannedBalance);
           rows.push("<tr>");
-          rows.push(`<td class="month-cell">${monthLabels[index]}</td>`);
+          rows.push(`<td class="month-cell month-col">${monthLabels[index]}</td>`);
           balanceFields.forEach(function ([key]) {
-            rows.push(`<td>${inputHtml("balance", index, key, balance[key])}</td>`);
+            rows.push(`<td class="num-col">${inputHtml("balance", index, key, balance[key])}</td>`);
           });
-          rows.push(`<td class="readonly">${formatMoney(total)}</td>`);
-          rows.push(`<td class="readonly ${total - planned >= 0 ? "good" : "bad"}">${planned ? formatMoney(total - planned) : "-"}</td>`);
+          rows.push(`<td class="readonly calc-col">${formatMoney(total)}</td>`);
+          rows.push(`<td class="readonly calc-col ${total - planned >= 0 ? "good" : "bad"}">${planned ? formatMoney(total - planned) : "-"}</td>`);
           rows.push("</tr>");
         });
         rows.push("</tbody>");
