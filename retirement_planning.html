@@ -267,7 +267,7 @@
     <section class="panel">
       <div class="panel-head">
         <h2>Zalozenia projekcji</h2>
-        <p>Wartosci w tabeli sa w tysiacach PLN. Domyslnie wszystkie procenty sa nominalne, czyli zawieraja inflacje.</p>
+        <p>Wartosci w tabeli sa w tysiacach PLN. CPI i realne wzrosty sa rozdzielone, zeby mozna bylo modelowac inflacje stylu zycia.</p>
       </div>
       <div class="controls">
         <label>Rok bazowy
@@ -278,9 +278,13 @@
           <input id="base-age" inputmode="numeric">
           <span class="field-hint">Wiek przypisany do roku bazowego.</span>
         </label>
-        <label>Inflacja CPI / wydatki
+        <label>Inflacja CPI
           <input id="cpi-rate" inputmode="decimal">
-          <span class="field-hint">Roczny nominalny wzrost kosztow zycia.</span>
+          <span class="field-hint">Roczna inflacja cen, uzywana do waloryzacji wydatkow i przychodow.</span>
+        </label>
+        <label>Wzrost wydatkow ponad CPI
+          <input id="expense-lifestyle-growth" inputmode="decimal">
+          <span class="field-hint">Realna inflacja stylu zycia; wydatki rosna nominalnie o CPI + ten wzrost.</span>
         </label>
         <label>Wzrost przychodow
           <input id="income-growth" inputmode="decimal">
@@ -306,7 +310,7 @@
         <button id="reset" class="secondary" type="button">Reset danych</button>
       </div>
       <div class="method-note">
-        <strong>Jak czytac zalozenia:</strong> wydatki rosna o CPI. Przychody z pracy rosna nominalnie o CPI plus wpisany wzrost przychodow, czyli pole wzrostu przychodow jest realnym wzrostem ponad inflacje. Jesli wpisujesz inflacje 2,5% i CAGR strategii 7%, model zaklada nominalny zwrot portfela 7%, czyli realnie okolo 4,4% przed podatkami i kosztami. Wzrost ZUS to zalozona nominalna waloryzacja swiadczenia po rozpoczeciu emerytury.
+        <strong>Jak czytac zalozenia:</strong> CPI opisuje ogolny wzrost cen. Wydatki rosna nominalnie o CPI plus wzrost wydatkow ponad CPI, czyli osobno mozesz zasymulowac inflacje stylu zycia. Przychody z pracy rosna nominalnie o CPI plus wpisany wzrost przychodow, wiec pole wzrostu przychodow jest realnym wzrostem ponad inflacje. Jesli wpisujesz inflacje 2,5% i CAGR strategii 7%, model zaklada nominalny zwrot portfela 7%, czyli realnie okolo 4,4% przed podatkami i kosztami. Wzrost ZUS to zalozona nominalna waloryzacja swiadczenia po rozpoczeciu emerytury.
       </div>
     </section>
 
@@ -369,7 +373,7 @@
   <script>
     (function () {
       const storageKey = "invStrRetirementPlanner.v1";
-      const modelVersion = 2;
+      const modelVersion = 3;
       const seedRows = [
         [35, 2021, 142, 174, 87, 32, "", ""],
         [36, 2022, 171, 193, 82, 22, "", ""],
@@ -430,6 +434,7 @@
           baseYear: 2026,
           baseAge: 40,
           cpiRate: 2.5,
+          expenseLifestyleGrowth: 0.0,
           incomeGrowth: 1.8,
           strategyCagr: 7.0,
           workUntilAge: 60,
@@ -451,6 +456,7 @@
         baseYear: document.getElementById("base-year"),
         baseAge: document.getElementById("base-age"),
         cpiRate: document.getElementById("cpi-rate"),
+        expenseLifestyleGrowth: document.getElementById("expense-lifestyle-growth"),
         incomeGrowth: document.getElementById("income-growth"),
         strategyCagr: document.getElementById("strategy-cagr"),
         workUntilAge: document.getElementById("work-until-age"),
@@ -480,6 +486,7 @@
           const parsed = JSON.parse(localStorage.getItem(storageKey) || "{}");
           if (parsed && parsed.rows && parsed.assumptions) {
             parsed.modelVersion = parsed.modelVersion || 1;
+            parsed.assumptions = Object.assign({}, defaults.assumptions, parsed.assumptions);
             return parsed;
           }
         } catch (error) {}
@@ -517,7 +524,7 @@
 
       function writeAssumptions() {
         Object.keys(inputs).forEach(function (key) {
-          inputs[key].value = ["cpiRate", "incomeGrowth", "strategyCagr", "zusGrowth"].includes(key)
+          inputs[key].value = ["cpiRate", "expenseLifestyleGrowth", "incomeGrowth", "strategyCagr", "zusGrowth"].includes(key)
             ? pctInput(state.assumptions[key])
             : state.assumptions[key];
         });
@@ -547,7 +554,7 @@
         for (let i = baseIndex + 1; i < rows.length; i += 1) {
           const previous = rows[i - 1];
           const row = rows[i];
-          row.expenses = Math.round(numberValue(previous.expenses) * (1 + a.cpiRate / 100));
+          row.expenses = Math.round(numberValue(previous.expenses) * (1 + (a.cpiRate + a.expenseLifestyleGrowth) / 100));
           if (row.age <= a.workUntilAge) {
             row.income = Math.round(numberValue(previous.income) * (1 + (a.cpiRate + a.incomeGrowth) / 100));
             row.saving = Math.max(0, row.income - row.expenses);
