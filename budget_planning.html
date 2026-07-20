@@ -369,6 +369,7 @@
   </main>
 
   <script src="assets/back_to_top.js"></script>
+  <script src="assets/budget_seed.js"></script>
   <script>
     (function () {
       const storageKey = "invStrBudgetPlanner.v1";
@@ -388,7 +389,8 @@
       const salaryCommentFields = [
         ["ewaNote", "Komentarz Ewa"],
         ["jacekNote", "Komentarz Jacek"],
-        ["bonusNote", "Komentarz premia"]
+        ["bonusNote", "Komentarz premia"],
+        ["monthNote", "Komentarz miesiaca"]
       ];
       const balanceFields = [
         ["pekaoCurrent", "Pekao eurokonto"],
@@ -446,14 +448,35 @@
         return { notes: data.notes || "", months: months };
       }
 
+      function seededState() {
+        const rawYears = window.INV_STR_BUDGET_SEED && Object.keys(window.INV_STR_BUDGET_SEED).length
+          ? window.INV_STR_BUDGET_SEED
+          : { "2026": seed2026 };
+        const years = {};
+        Object.keys(rawYears).forEach(function (year) {
+          years[year] = normalizeYearData(JSON.parse(JSON.stringify(rawYears[year])));
+        });
+        const activeYear = years["2026"] ? "2026" : Object.keys(years).sort().slice(-1)[0];
+        return { activeYear: activeYear, years: years };
+      }
+
       function loadState() {
+        const defaults = seededState();
         try {
           const parsed = JSON.parse(localStorage.getItem(storageKey) || "{}");
           if (parsed && parsed.years) {
+            Object.keys(defaults.years).forEach(function (year) {
+              if (!parsed.years[year]) {
+                parsed.years[year] = defaults.years[year];
+              }
+            });
+            if (!parsed.activeYear) {
+              parsed.activeYear = defaults.activeYear;
+            }
             return parsed;
           }
         } catch (error) {}
-        return { activeYear: "2026", years: { "2026": normalizeYearData(seed2026) } };
+        return defaults;
       }
 
       function saveState() {
