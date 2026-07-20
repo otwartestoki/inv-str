@@ -1,0 +1,762 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Planowanie budzetu</title>
+  <style>
+    :root {
+      --ink: #202020;
+      --muted: #666;
+      --line: #d8d1c3;
+      --panel: #fff;
+      --bg: #f7f8f5;
+      --accent: #15616d;
+      --soft: #eef4f2;
+      --warn: #9a5b00;
+      --bad: #a23b2a;
+      --good: #0b6e4f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    main {
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 28px 24px 56px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+    h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+    h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+    }
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    a {
+      color: var(--accent);
+      font-weight: 650;
+      text-decoration: none;
+    }
+    a:hover { text-decoration: underline; }
+    .top-nav {
+      margin: 0 0 18px;
+      font-size: 14px;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 12px;
+      margin: 20px 0;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      color: #444;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    input, select, textarea, button {
+      font: inherit;
+    }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid #bdb6a7;
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+    }
+    input, select {
+      height: 36px;
+      padding: 7px 9px;
+    }
+    textarea {
+      min-height: 36px;
+      padding: 7px 9px;
+      resize: vertical;
+    }
+    button {
+      height: 36px;
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: #fff;
+      color: var(--accent);
+    }
+    button.danger {
+      border-color: #a23b2a;
+      background: #a23b2a;
+    }
+    .control {
+      min-width: 150px;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 12px;
+      margin: 0 0 18px;
+    }
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 14px;
+    }
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .metric strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 22px;
+    }
+    .metric small {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(420px, 1.1fr) minmax(360px, 0.9fr) minmax(520px, 1.25fr);
+      gap: 14px;
+      align-items: start;
+    }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      overflow: hidden;
+    }
+    .panel-head {
+      padding: 14px 14px 10px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+    .panel-head p {
+      font-size: 13px;
+    }
+    .table-wrap {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      min-width: 760px;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .narrow table {
+      min-width: 620px;
+    }
+    .wide table {
+      min-width: 980px;
+    }
+    th, td {
+      border-bottom: 1px solid #e7e1d8;
+      border-right: 1px solid #eee8df;
+      padding: 6px;
+      text-align: right;
+      vertical-align: top;
+      white-space: nowrap;
+    }
+    th:first-child, td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      text-align: left;
+      background: #fff;
+    }
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #f1eee6;
+      color: #333;
+      font-weight: 700;
+    }
+    th:first-child {
+      z-index: 3;
+      background: #f1eee6;
+    }
+    tfoot td {
+      background: #fbfaf6;
+      font-weight: 700;
+    }
+    td.readonly {
+      background: #fbfaf6;
+      color: #333;
+      font-weight: 650;
+    }
+    .good { color: var(--good); }
+    .bad { color: var(--bad); }
+    .warn { color: var(--warn); }
+    td input, td textarea {
+      min-width: 88px;
+      border-color: transparent;
+      background: transparent;
+      text-align: right;
+    }
+    td textarea {
+      min-width: 140px;
+      text-align: left;
+      white-space: normal;
+    }
+    td input:focus, td textarea:focus {
+      border-color: var(--accent);
+      background: #fff;
+      outline: none;
+    }
+    .month-cell {
+      font-weight: 700;
+    }
+    .badge {
+      display: inline-block;
+      min-width: 62px;
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: var(--soft);
+      color: #244b50;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .note {
+      margin: 14px;
+      padding: 12px;
+      border: 1px solid #ead7a5;
+      border-radius: 8px;
+      background: #fff8e7;
+      color: #5c4314;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .annual {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+    }
+    @media (max-width: 1280px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+      table, .narrow table, .wide table {
+        min-width: 820px;
+      }
+    }
+    @media (max-width: 760px) {
+      main { padding: 22px 14px 42px; }
+      .toolbar { align-items: stretch; }
+      .control { min-width: 100%; }
+      button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <nav class="top-nav"><a href="index.html">Strona glowna</a> / Planowanie budzetu</nav>
+    <h1>Planowanie budzetu</h1>
+    <p>Roczny arkusz budzetowy: planowane wplywy, miesieczne oszczednosci oraz salda kont porownane z planem ze stycznia.</p>
+
+    <div class="toolbar">
+      <div class="control">
+        <label for="year-select">Rok</label>
+        <select id="year-select"></select>
+      </div>
+      <div class="control">
+        <label for="new-year">Dodaj rok</label>
+        <input id="new-year" inputmode="numeric" placeholder="np. 2027">
+      </div>
+      <button id="add-year" type="button">Dodaj</button>
+      <button id="copy-year" class="secondary" type="button">Skopiuj poprzedni rok</button>
+      <button id="export-json" class="secondary" type="button">Eksport JSON</button>
+      <label class="control">
+        Import JSON
+        <input id="import-json" type="file" accept="application/json,.json">
+      </label>
+      <button id="reset-year" class="danger" type="button">Wyczysc rok</button>
+    </div>
+
+    <section class="summary-grid" aria-label="Podsumowanie roku">
+      <div class="metric"><span>Plan oszczednosci</span><strong id="metric-plan-saving">0 zl</strong><small>prognoza na caly rok</small></div>
+      <div class="metric"><span>Realne oszczednosci</span><strong id="metric-real-saving">0 zl</strong><small>narastajaco z wpisow miesiecznych</small></div>
+      <div class="metric"><span>Realizacja planu</span><strong id="metric-progress">0%</strong><small>realne / planowane</small></div>
+      <div class="metric"><span>Salda kont</span><strong id="metric-balance">0 zl</strong><small>ostatni miesiac z wpisanym saldem</small></div>
+      <div class="metric"><span>Odchylenie od planu</span><strong id="metric-gap">0 zl</strong><small>saldo realne minus plan</small></div>
+    </section>
+
+    <section class="workspace">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>1. Wplywy i plan miesiaca</h2>
+          <p>Wynagrodzenia i dodatki mozna planowac w styczniu, a potem aktualizowac miesiac po miesiacu. Przy wynagrodzeniach jest pole komentarza na premie, korekty i jednorazowe zdarzenia.</p>
+        </div>
+        <div class="table-wrap wide">
+          <table id="income-table"></table>
+        </div>
+      </div>
+
+      <div class="panel narrow">
+        <div class="panel-head">
+          <h2>2. Oszczednosci</h2>
+          <p>Porownanie prognozy z realnym wykonaniem. Realna wartosc miesieczna jest wpisywana na poczatku kolejnego miesiaca.</p>
+        </div>
+        <div class="table-wrap">
+          <table id="saving-table"></table>
+        </div>
+        <div class="note">Procenty licza wykonanie miesiaca i wykonanie narastajace. Puste realne oszczednosci nie sa traktowane jak zero, dopoki nie wpiszesz wartosci.</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>3. Salda kont i porownanie z planem</h2>
+          <p>Po prawej stronie wpisujesz stany kont, lokat, IKE/IKZE, obligacji i brokerow. Suma jest porownywana z planem rocznym.</p>
+        </div>
+        <div class="table-wrap wide">
+          <table id="balance-table"></table>
+        </div>
+      </div>
+    </section>
+
+    <section class="annual">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Roczne podsumowanie</h2>
+          <p>Agregat z aktualnie wybranego roku.</p>
+        </div>
+        <div class="table-wrap narrow">
+          <table id="annual-table"></table>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Notatki do roku</h2>
+          <p>Miejsce na zalozenia ze stycznia i korekty w trakcie roku.</p>
+        </div>
+        <div style="padding:14px">
+          <textarea id="year-notes" placeholder="np. zalozenia podwyzek, premie, wakacje, wieksze wydatki, cele oszczednosciowe"></textarea>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="assets/back_to_top.js"></script>
+  <script>
+    (function () {
+      const storageKey = "invStrBudgetPlanner.v1";
+      const monthLabels = ["sty", "lut", "mar", "kwi", "maj", "cze", "lip", "sie", "wrz", "paz", "lis", "gru"];
+      const incomeFields = [
+        ["ewa", "Ewa"],
+        ["jacek", "Jacek"],
+        ["bonus", "Premia"],
+        ["benefit", "500+/800+"],
+        ["fixedCosts", "Koszty stale"],
+        ["fuel", "Paliwo"],
+        ["mbank", "mBank"],
+        ["holidays", "Wakacje"],
+        ["special", "Cel specjalny"],
+        ["plannedSaving", "Prognoza oszcz."]
+      ];
+      const salaryCommentFields = [
+        ["ewaNote", "Komentarz Ewa"],
+        ["jacekNote", "Komentarz Jacek"],
+        ["bonusNote", "Komentarz premia"]
+      ];
+      const balanceFields = [
+        ["pekaoCurrent", "Pekao eurokonto"],
+        ["mojSkarb", "Moj skarb"],
+        ["dailyBuckets", "Odziez/prezenty/zdrowie"],
+        ["holidaysBalance", "Wakacje"],
+        ["fuelBalance", "Paliwo"],
+        ["depositsBonds", "Lokaty/obl."],
+        ["mbankCurrent", "mBank eKonto"],
+        ["ikzeJ", "IKZE J"],
+        ["ikzeE", "IKZE E"],
+        ["ikeJ", "IKE J"],
+        ["ikeE", "IKE E"],
+        ["ppk", "PPK"],
+        ["treasuryBonds", "Obligacje"],
+        ["brokerage", "XTB/UBS/IBKR"],
+        ["plannedBalance", "Suma plan"]
+      ];
+
+      const seed2026 = {
+        notes: "Dane startowe przeniesione z zalaczonego arkusza jako baza do dalszej edycji.",
+        months: [
+          { ewa: 10780, jacek: 11298, bonus: 0, benefit: 1600, fixedCosts: 6700, fuel: 1500, mbank: 3150, holidays: 4000, special: 4000, plannedSaving: 4328, realSaving: 654, balance: { plannedBalance: 267304, brokerage: 19389, treasuryBonds: 23076, ppk: 13539, ikeE: 26989, ikeJ: 64301, ikzeE: 50905, ikzeJ: 42696, mbankCurrent: 39, depositsBonds: 0, holidaysBalance: 7600, dailyBuckets: 19403, mojSkarb: 4679, pekaoCurrent: 3829 } },
+          { ewa: 10855, jacek: 11404, bonus: 7092, benefit: 1600, fixedCosts: 6700, fuel: 1500, mbank: 3150, holidays: 4000, special: 4000, plannedSaving: 11601, realSaving: 9300, balance: { plannedBalance: 278905, brokerage: 16198, treasuryBonds: 22828, ppk: 16313, ikeE: 26881, ikeJ: 63667, ikzeE: 58935, ikzeJ: 42798, mbankCurrent: 370, depositsBonds: 0, holidaysBalance: 10350, fuelBalance: 833, dailyBuckets: 8093, mojSkarb: 4684, pekaoCurrent: 24 } },
+          { ewa: 16004, jacek: 24998, bonus: 0, benefit: 1600, fixedCosts: 6700, fuel: 1500, mbank: 3150, holidays: 4000, special: 4000, plannedSaving: 23252, realSaving: 18136, balance: { plannedBalance: 302157, brokerage: 8001, treasuryBonds: 23219, ppk: 13293, ikeE: 27525, ikeJ: 75020, ikzeE: 62939, ikzeJ: 43747, mbankCurrent: 444, depositsBonds: 0, holidaysBalance: 10350, fuelBalance: 503, dailyBuckets: 9820, mojSkarb: 4684, pekaoCurrent: 3743 } },
+          { ewa: 13013, jacek: 22778, bonus: 0, benefit: 1600, fixedCosts: 6700, fuel: 1500, mbank: 3150, holidays: 4000, special: 4000, plannedSaving: 18041, realSaving: 13996, balance: { plannedBalance: 320198, brokerage: 9264, treasuryBonds: 23346, ppk: 15685, ikeE: 27318, ikeJ: 78819, ikzeE: 62624, ikzeJ: 54554, mbankCurrent: 87, depositsBonds: 3000, holidaysBalance: 7950, dailyBuckets: 10851, mojSkarb: 4740, pekaoCurrent: 2899 } },
+          { ewa: 14887, jacek: 12260, bonus: 0, benefit: 1600, fixedCosts: 6700, fuel: 1500, mbank: 3150, holidays: 4000, special: 4000, plannedSaving: 9397, realSaving: 6000, balance: { plannedBalance: 329595, brokerage: 9301, treasuryBonds: 23085, ppk: 16497, ikeE: 26945, ikeJ: 78867, ikzeE: 63797, ikzeJ: 52864, mbankCurrent: 350, depositsBonds: 10000, holidaysBalance: 9600, dailyBuckets: 14152, mojSkarb: 5193, pekaoCurrent: 10431 } },
+          { ewa: 14875, jacek: 10300, bonus: 0, benefit: 1600, fixedCosts: 6700, fuel: 1500, mbank: 3150, holidays: 4000, special: 0, plannedSaving: 11425, realSaving: 4900, balance: { plannedBalance: 341020, brokerage: 7958, treasuryBonds: 23408, ppk: 21423, ikeE: 34582, ikeJ: 97139, ikzeE: 64118, ikzeJ: 53588, mbankCurrent: 194, depositsBonds: 0, holidaysBalance: 1000, dailyBuckets: 7447, mojSkarb: 21594, pekaoCurrent: 6635 } },
+          { ewa: 8500, jacek: 11135, bonus: 3500, benefit: 1600, fixedCosts: 6700, fuel: 1500, mbank: 3150, holidays: 4000, special: 0, plannedSaving: 9385, realSaving: 9100, balance: { plannedBalance: 350405, brokerage: 9455, treasuryBonds: 23508, ppk: 22105, ikeE: 40079, ikeJ: 98517, ikzeE: 64901, ikzeJ: 54060, mbankCurrent: 68, depositsBonds: 0, holidaysBalance: 4750, dailyBuckets: 18790, mojSkarb: 21602, pekaoCurrent: 52 } },
+          { ewa: 8500, jacek: 8800, bonus: 0, benefit: 1600, fixedCosts: 6700, fuel: 1500, mbank: 3150, holidays: 4000, special: 0, plannedSaving: 3550, balance: { plannedBalance: 353955 } },
+          { ewa: 8500, jacek: 8800, bonus: 0, benefit: 1600, fixedCosts: 6700, fuel: 1500, mbank: 3150, holidays: 4000, special: 0, plannedSaving: 3550, balance: { plannedBalance: 357505 } },
+          { ewa: 7000, jacek: 8800, bonus: 0, benefit: 1600, fixedCosts: 6700, fuel: 1500, mbank: 3150, holidays: 4000, special: 0, plannedSaving: 2050, balance: { plannedBalance: 359555 } },
+          { ewa: 7000, jacek: 8800, bonus: 0, benefit: 1600, fixedCosts: 6700, fuel: 1500, mbank: 3150, holidays: 4000, special: 0, plannedSaving: 2050, balance: { plannedBalance: 361605 } },
+          { ewa: 7000, jacek: 8800, bonus: 0, benefit: 1600, fixedCosts: 6700, fuel: 1500, mbank: 3150, holidays: 4000, special: 0, plannedSaving: 2050, balance: { plannedBalance: 363655 } }
+        ]
+      };
+
+      let state = loadState();
+      const yearSelect = document.getElementById("year-select");
+      const newYearEl = document.getElementById("new-year");
+      const incomeTable = document.getElementById("income-table");
+      const savingTable = document.getElementById("saving-table");
+      const balanceTable = document.getElementById("balance-table");
+      const annualTable = document.getElementById("annual-table");
+      const yearNotesEl = document.getElementById("year-notes");
+
+      function emptyMonth() {
+        return { balance: {} };
+      }
+
+      function normalizeYearData(data) {
+        const months = Array.from({ length: 12 }, function (_, index) {
+          return Object.assign(emptyMonth(), data.months && data.months[index] ? data.months[index] : {});
+        });
+        return { notes: data.notes || "", months: months };
+      }
+
+      function loadState() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(storageKey) || "{}");
+          if (parsed && parsed.years) {
+            return parsed;
+          }
+        } catch (error) {}
+        return { activeYear: "2026", years: { "2026": normalizeYearData(seed2026) } };
+      }
+
+      function saveState() {
+        localStorage.setItem(storageKey, JSON.stringify(state));
+      }
+
+      function currentYearData() {
+        const year = state.activeYear || "2026";
+        if (!state.years[year]) {
+          state.years[year] = normalizeYearData({});
+        }
+        state.years[year] = normalizeYearData(state.years[year]);
+        return state.years[year];
+      }
+
+      function numberValue(value) {
+        if (value === null || value === undefined || value === "") {
+          return 0;
+        }
+        const normalized = String(value).replace(/\s/g, "").replace("zl", "").replace(",", ".");
+        const parsed = Number(normalized);
+        return Number.isFinite(parsed) ? parsed : 0;
+      }
+
+      function hasValue(value) {
+        return value !== null && value !== undefined && String(value).trim() !== "";
+      }
+
+      function formatMoney(value) {
+        return new Intl.NumberFormat("pl-PL", { maximumFractionDigits: 0 }).format(Math.round(value || 0)) + " zl";
+      }
+
+      function formatPct(value) {
+        if (!Number.isFinite(value)) {
+          return "-";
+        }
+        return Math.round(value * 100) + "%";
+      }
+
+      function monthIncome(month) {
+        return numberValue(month.ewa) + numberValue(month.jacek) + numberValue(month.bonus) + numberValue(month.benefit);
+      }
+
+      function monthPlannedCosts(month) {
+        return numberValue(month.fixedCosts) + numberValue(month.fuel) + numberValue(month.mbank) + numberValue(month.holidays) + numberValue(month.special);
+      }
+
+      function monthBalanceTotal(month) {
+        return balanceFields
+          .filter(function ([key]) { return key !== "plannedBalance"; })
+          .reduce(function (sum, [key]) { return sum + numberValue(month.balance && month.balance[key]); }, 0);
+      }
+
+      function latestMonthWithBalance(yearData) {
+        for (let i = 11; i >= 0; i -= 1) {
+          if (monthBalanceTotal(yearData.months[i]) > 0 || numberValue(yearData.months[i].balance && yearData.months[i].balance.plannedBalance) > 0) {
+            return i;
+          }
+        }
+        return 0;
+      }
+
+      function inputHtml(section, monthIndex, field, value, text) {
+        const safe = value === undefined || value === null ? "" : String(value).replace(/"/g, "&quot;");
+        const type = text ? "textarea" : "input";
+        if (type === "textarea") {
+          return `<textarea data-section="${section}" data-month="${monthIndex}" data-field="${field}">${safe}</textarea>`;
+        }
+        return `<input data-section="${section}" data-month="${monthIndex}" data-field="${field}" inputmode="decimal" value="${safe}">`;
+      }
+
+      function renderYearSelect() {
+        const years = Object.keys(state.years).sort();
+        yearSelect.innerHTML = years.map(function (year) {
+          return `<option value="${year}">${year}</option>`;
+        }).join("");
+        yearSelect.value = state.activeYear;
+      }
+
+      function renderIncomeTable(yearData) {
+        const rows = [];
+        rows.push("<thead><tr><th>Miesiac</th>" + incomeFields.map(function ([, label]) { return `<th>${label}</th>`; }).join("") + salaryCommentFields.map(function ([, label]) { return `<th>${label}</th>`; }).join("") + "<th>Wplywy</th><th>Plan koszty</th><th>Plan nadwyzka</th></tr></thead>");
+        rows.push("<tbody>");
+        yearData.months.forEach(function (month, index) {
+          const income = monthIncome(month);
+          const costs = monthPlannedCosts(month);
+          rows.push("<tr>");
+          rows.push(`<td class="month-cell">${monthLabels[index]} ${state.activeYear}</td>`);
+          incomeFields.forEach(function ([key]) {
+            rows.push(`<td>${inputHtml("month", index, key, month[key])}</td>`);
+          });
+          salaryCommentFields.forEach(function ([key]) {
+            rows.push(`<td>${inputHtml("month", index, key, month[key], true)}</td>`);
+          });
+          rows.push(`<td class="readonly">${formatMoney(income)}</td>`);
+          rows.push(`<td class="readonly">${formatMoney(costs)}</td>`);
+          rows.push(`<td class="readonly ${income - costs >= 0 ? "good" : "bad"}">${formatMoney(income - costs)}</td>`);
+          rows.push("</tr>");
+        });
+        rows.push("</tbody>");
+        incomeTable.innerHTML = rows.join("");
+      }
+
+      function renderSavingTable(yearData) {
+        let plannedCum = 0;
+        let realCum = 0;
+        const rows = [];
+        rows.push("<thead><tr><th>Miesiac</th><th>Prognoza</th><th>Prognoza skum.</th><th>Realna oszcz.</th><th>Realna skum.</th><th>Miesiac</th><th>Rok</th></tr></thead><tbody>");
+        yearData.months.forEach(function (month, index) {
+          const planned = numberValue(month.plannedSaving);
+          plannedCum += planned;
+          const realEntered = hasValue(month.realSaving);
+          if (realEntered) {
+            realCum += numberValue(month.realSaving);
+          }
+          const monthPct = planned !== 0 && realEntered ? numberValue(month.realSaving) / planned : NaN;
+          const yearPct = plannedCum !== 0 ? realCum / plannedCum : NaN;
+          rows.push("<tr>");
+          rows.push(`<td class="month-cell">${monthLabels[index]}</td>`);
+          rows.push(`<td class="readonly">${formatMoney(planned)}</td>`);
+          rows.push(`<td class="readonly">${formatMoney(plannedCum)}</td>`);
+          rows.push(`<td>${inputHtml("month", index, "realSaving", month.realSaving)}</td>`);
+          rows.push(`<td class="readonly">${realEntered || realCum ? formatMoney(realCum) : "-"}</td>`);
+          rows.push(`<td class="readonly"><span class="badge">${formatPct(monthPct)}</span></td>`);
+          rows.push(`<td class="readonly"><span class="badge">${formatPct(yearPct)}</span></td>`);
+          rows.push("</tr>");
+        });
+        rows.push("</tbody>");
+        savingTable.innerHTML = rows.join("");
+      }
+
+      function renderBalanceTable(yearData) {
+        const rows = [];
+        rows.push("<thead><tr><th>Miesiac</th>" + balanceFields.map(function ([, label]) { return `<th>${label}</th>`; }).join("") + "<th>Suma realna</th><th>Roznica</th></tr></thead><tbody>");
+        yearData.months.forEach(function (month, index) {
+          const balance = month.balance || {};
+          const total = monthBalanceTotal(month);
+          const planned = numberValue(balance.plannedBalance);
+          rows.push("<tr>");
+          rows.push(`<td class="month-cell">${monthLabels[index]}</td>`);
+          balanceFields.forEach(function ([key]) {
+            rows.push(`<td>${inputHtml("balance", index, key, balance[key])}</td>`);
+          });
+          rows.push(`<td class="readonly">${formatMoney(total)}</td>`);
+          rows.push(`<td class="readonly ${total - planned >= 0 ? "good" : "bad"}">${planned ? formatMoney(total - planned) : "-"}</td>`);
+          rows.push("</tr>");
+        });
+        rows.push("</tbody>");
+        balanceTable.innerHTML = rows.join("");
+      }
+
+      function renderAnnual(yearData) {
+        const planSaving = yearData.months.reduce(function (sum, month) { return sum + numberValue(month.plannedSaving); }, 0);
+        const realSaving = yearData.months.reduce(function (sum, month) { return sum + (hasValue(month.realSaving) ? numberValue(month.realSaving) : 0); }, 0);
+        const income = yearData.months.reduce(function (sum, month) { return sum + monthIncome(month); }, 0);
+        const costs = yearData.months.reduce(function (sum, month) { return sum + monthPlannedCosts(month); }, 0);
+        const latestIndex = latestMonthWithBalance(yearData);
+        const latestMonth = yearData.months[latestIndex];
+        const latestBalance = monthBalanceTotal(latestMonth);
+        const latestPlan = numberValue(latestMonth.balance && latestMonth.balance.plannedBalance);
+        const gap = latestBalance - latestPlan;
+
+        document.getElementById("metric-plan-saving").textContent = formatMoney(planSaving);
+        document.getElementById("metric-real-saving").textContent = formatMoney(realSaving);
+        document.getElementById("metric-progress").textContent = formatPct(planSaving ? realSaving / planSaving : NaN);
+        document.getElementById("metric-balance").textContent = formatMoney(latestBalance);
+        document.getElementById("metric-gap").textContent = latestPlan ? formatMoney(gap) : "-";
+        document.getElementById("metric-gap").className = gap >= 0 ? "good" : "bad";
+
+        annualTable.innerHTML = `
+          <tbody>
+            <tr><td>Planowane wplywy</td><td>${formatMoney(income)}</td></tr>
+            <tr><td>Planowane koszty/cele</td><td>${formatMoney(costs)}</td></tr>
+            <tr><td>Planowana nadwyzka z wplywow</td><td>${formatMoney(income - costs)}</td></tr>
+            <tr><td>Prognoza oszczednosci</td><td>${formatMoney(planSaving)}</td></tr>
+            <tr><td>Realne oszczednosci</td><td>${formatMoney(realSaving)}</td></tr>
+            <tr><td>Ostatni miesiac sald</td><td>${monthLabels[latestIndex]} ${state.activeYear}</td></tr>
+            <tr><td>Suma sald</td><td>${formatMoney(latestBalance)}</td></tr>
+            <tr><td>Suma plan</td><td>${latestPlan ? formatMoney(latestPlan) : "-"}</td></tr>
+            <tr><td>Roznica sald</td><td class="${gap >= 0 ? "good" : "bad"}">${latestPlan ? formatMoney(gap) : "-"}</td></tr>
+          </tbody>
+        `;
+      }
+
+      function render() {
+        renderYearSelect();
+        const yearData = currentYearData();
+        yearNotesEl.value = yearData.notes || "";
+        renderIncomeTable(yearData);
+        renderSavingTable(yearData);
+        renderBalanceTable(yearData);
+        renderAnnual(yearData);
+      }
+
+      function updateFromInput(input) {
+        const yearData = currentYearData();
+        const month = yearData.months[Number(input.dataset.month)];
+        const field = input.dataset.field;
+        if (input.dataset.section === "balance") {
+          month.balance = month.balance || {};
+          month.balance[field] = input.value;
+        } else {
+          month[field] = input.value;
+        }
+        saveState();
+        render();
+      }
+
+      function clonePlanFromPreviousYear(newYear) {
+        const previousYear = String(Number(newYear) - 1);
+        const source = state.years[previousYear] || currentYearData();
+        const cloned = normalizeYearData(JSON.parse(JSON.stringify(source)));
+        cloned.notes = "";
+        cloned.months.forEach(function (month) {
+          month.realSaving = "";
+          month.balance = { plannedBalance: month.balance && month.balance.plannedBalance ? month.balance.plannedBalance : "" };
+        });
+        return cloned;
+      }
+
+      document.addEventListener("change", function (event) {
+        const input = event.target;
+        if (input.matches("[data-section]")) {
+          updateFromInput(input);
+        }
+      });
+
+      yearNotesEl.addEventListener("input", function () {
+        currentYearData().notes = yearNotesEl.value;
+        saveState();
+      });
+
+      yearSelect.addEventListener("change", function () {
+        state.activeYear = yearSelect.value;
+        saveState();
+        render();
+      });
+
+      document.getElementById("add-year").addEventListener("click", function () {
+        const year = String(numberValue(newYearEl.value || new Date().getFullYear()));
+        if (!year || year.length !== 4) {
+          alert("Wpisz rok w formacie RRRR.");
+          return;
+        }
+        state.years[year] = normalizeYearData({});
+        state.activeYear = year;
+        newYearEl.value = "";
+        saveState();
+        render();
+      });
+
+      document.getElementById("copy-year").addEventListener("click", function () {
+        const target = String(numberValue(newYearEl.value || Number(state.activeYear) + 1));
+        state.years[target] = clonePlanFromPreviousYear(target);
+        state.activeYear = target;
+        newYearEl.value = "";
+        saveState();
+        render();
+      });
+
+      document.getElementById("reset-year").addEventListener("click", function () {
+        if (!confirm("Wyczysc dane dla roku " + state.activeYear + "?")) {
+          return;
+        }
+        state.years[state.activeYear] = normalizeYearData({});
+        saveState();
+        render();
+      });
+
+      document.getElementById("export-json").addEventListener("click", function () {
+        const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "planowanie-budzetu.json";
+        link.click();
+        URL.revokeObjectURL(url);
+      });
+
+      document.getElementById("import-json").addEventListener("change", function (event) {
+        const file = event.target.files && event.target.files[0];
+        if (!file) {
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function () {
+          try {
+            const parsed = JSON.parse(String(reader.result || "{}"));
+            if (!parsed.years) {
+              throw new Error("Brak pola years");
+            }
+            state = parsed;
+            saveState();
+            render();
+          } catch (error) {
+            alert("Nie udalo sie wczytac JSON: " + error.message);
+          }
+        };
+        reader.readAsText(file);
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>
