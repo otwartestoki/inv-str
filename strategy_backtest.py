@@ -22,7 +22,7 @@ PROCESSED = ROOT / "data" / "processed"
 REPORTS = ROOT / "reports"
 
 START = os.environ.get("BACKTEST_START", "1954-07-02")
-END = pd.Timestamp(os.environ.get("BACKTEST_END", "1990-12-31")).normalize()
+END = pd.Timestamp(os.environ.get("BACKTEST_END", pd.Timestamp.today().date().isoformat())).normalize()
 TRADING_COST = 0.002
 
 
