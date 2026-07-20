@@ -25,9 +25,9 @@
       background: var(--bg);
     }
     main {
-      max-width: 1500px;
+      max-width: 1920px;
       margin: 0 auto;
-      padding: 28px 24px 56px;
+      padding: 22px 18px 48px;
     }
     h1 {
       margin: 0 0 8px;
@@ -60,9 +60,9 @@
       display: flex;
       flex-wrap: wrap;
       align-items: end;
-      gap: 12px;
-      margin: 20px 0;
-      padding: 14px;
+      gap: 8px;
+      margin: 14px 0;
+      padding: 10px;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: var(--panel);
@@ -71,7 +71,7 @@
       display: block;
       margin-bottom: 5px;
       color: #444;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
     }
@@ -86,16 +86,16 @@
       color: var(--ink);
     }
     input, select {
-      height: 36px;
-      padding: 7px 9px;
+      height: 28px;
+      padding: 4px 6px;
     }
     textarea {
-      min-height: 36px;
-      padding: 7px 9px;
+      min-height: 28px;
+      padding: 4px 6px;
       resize: vertical;
     }
     button {
-      height: 36px;
+      height: 28px;
       border: 1px solid var(--accent);
       border-radius: 6px;
       background: var(--accent);
@@ -112,42 +112,60 @@
       background: #a23b2a;
     }
     .control {
-      min-width: 150px;
+      min-width: 132px;
     }
     .summary-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-      gap: 12px;
-      margin: 0 0 18px;
+      grid-template-columns: repeat(5, minmax(150px, 1fr));
+      gap: 8px;
+      margin: 0 0 12px;
     }
     .metric {
       border: 1px solid var(--line);
       border-radius: 8px;
       background: var(--panel);
-      padding: 14px;
+      padding: 10px;
     }
     .metric span {
       display: block;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
     }
     .metric strong {
       display: block;
-      margin-top: 6px;
-      font-size: 22px;
+      margin-top: 4px;
+      font-size: 18px;
     }
     .metric small {
       display: block;
-      margin-top: 4px;
+      margin-top: 2px;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 11px;
+    }
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 0 0 10px;
+    }
+    .tab-button {
+      height: 30px;
+      border-color: #bdb6a7;
+      background: #fff;
+      color: #333;
+      padding: 0 12px;
+    }
+    .tab-button.is-active {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
     }
     .workspace {
       display: grid;
-      grid-template-columns: minmax(420px, 1.1fr) minmax(360px, 0.9fr) minmax(520px, 1.25fr);
-      gap: 14px;
+      grid-template-columns: minmax(390px, 0.95fr) minmax(300px, 0.65fr) minmax(500px, 1.1fr);
+      gap: 8px;
       align-items: start;
     }
     .panel {
@@ -157,32 +175,34 @@
       overflow: hidden;
     }
     .panel-head {
-      padding: 14px 14px 10px;
+      min-height: 82px;
+      padding: 10px 10px 8px;
       border-bottom: 1px solid var(--line);
       background: #fff;
     }
     .panel-head p {
-      font-size: 13px;
+      font-size: 12px;
     }
     .table-wrap {
       overflow-x: auto;
     }
     table {
       width: 100%;
-      min-width: 760px;
+      min-width: 680px;
       border-collapse: collapse;
-      font-size: 13px;
+      font-size: 12px;
     }
     .narrow table {
-      min-width: 620px;
+      min-width: 500px;
     }
     .wide table {
-      min-width: 980px;
+      min-width: 760px;
     }
     th, td {
       border-bottom: 1px solid #e7e1d8;
       border-right: 1px solid #eee8df;
-      padding: 6px;
+      height: 30px;
+      padding: 3px 4px;
       text-align: right;
       vertical-align: top;
       white-space: nowrap;
@@ -201,6 +221,9 @@
       background: #f1eee6;
       color: #333;
       font-weight: 700;
+      height: 34px;
+      white-space: normal;
+      line-height: 1.12;
     }
     th:first-child {
       z-index: 3;
@@ -219,15 +242,20 @@
     .bad { color: var(--bad); }
     .warn { color: var(--warn); }
     td input, td textarea {
-      min-width: 88px;
+      min-width: 52px;
+      height: 23px;
+      padding: 2px 3px;
       border-color: transparent;
       background: transparent;
       text-align: right;
     }
     td textarea {
-      min-width: 140px;
+      min-width: 82px;
+      height: 23px;
+      min-height: 23px;
       text-align: left;
       white-space: normal;
+      resize: none;
     }
     td input:focus, td textarea:focus {
       border-color: var(--accent);
@@ -240,36 +268,51 @@
     .badge {
       display: inline-block;
       min-width: 62px;
-      padding: 3px 7px;
+      padding: 2px 5px;
       border-radius: 999px;
       background: var(--soft);
       color: #244b50;
       text-align: center;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
     }
     .note {
-      margin: 14px;
-      padding: 12px;
+      margin: 10px;
+      padding: 9px;
       border: 1px solid #ead7a5;
       border-radius: 8px;
       background: #fff8e7;
       color: #5c4314;
-      font-size: 13px;
+      font-size: 12px;
       line-height: 1.45;
     }
     .annual {
-      margin-top: 14px;
+      margin-top: 10px;
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 14px;
+      gap: 8px;
     }
-    @media (max-width: 1280px) {
+    @media (max-width: 1480px) {
+      .summary-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      }
       .workspace {
         grid-template-columns: 1fr;
       }
+      .workspace[data-active-tab="income"] .budget-panel:not([data-tab-panel="income"]),
+      .workspace[data-active-tab="saving"] .budget-panel:not([data-tab-panel="saving"]),
+      .workspace[data-active-tab="balance"] .budget-panel:not([data-tab-panel="balance"]) {
+        display: none;
+      }
       table, .narrow table, .wide table {
-        min-width: 820px;
+        min-width: 760px;
+      }
+    }
+    @media (min-width: 1481px) {
+      .tab-button[data-tab="income"],
+      .tab-button[data-tab="saving"],
+      .tab-button[data-tab="balance"] {
+        display: none;
       }
     }
     @media (max-width: 760px) {
@@ -313,8 +356,15 @@
       <div class="metric"><span>Odchylenie od planu</span><strong id="metric-gap">0 zl</strong><small>saldo realne minus plan</small></div>
     </section>
 
-    <section class="workspace">
-      <div class="panel">
+    <div class="tabs" aria-label="Widok budzetu">
+      <button class="tab-button is-active" type="button" data-tab="all">Razem</button>
+      <button class="tab-button" type="button" data-tab="income">Wplywy</button>
+      <button class="tab-button" type="button" data-tab="saving">Oszczednosci</button>
+      <button class="tab-button" type="button" data-tab="balance">Salda</button>
+    </div>
+
+    <section class="workspace" data-active-tab="all">
+      <div class="panel budget-panel" data-tab-panel="income">
         <div class="panel-head">
           <h2>1. Wplywy i plan miesiaca</h2>
           <p>Wynagrodzenia i dodatki mozna planowac w styczniu, a potem aktualizowac miesiac po miesiacu. Przy wynagrodzeniach jest pole komentarza na premie, korekty i jednorazowe zdarzenia.</p>
@@ -324,7 +374,7 @@
         </div>
       </div>
 
-      <div class="panel narrow">
+      <div class="panel narrow budget-panel" data-tab-panel="saving">
         <div class="panel-head">
           <h2>2. Oszczednosci</h2>
           <p>Porownanie prognozy z realnym wykonaniem. Realna wartosc miesieczna jest wpisywana na poczatku kolejnego miesiaca.</p>
@@ -335,7 +385,7 @@
         <div class="note">Procenty licza wykonanie miesiaca i wykonanie narastajace. Puste realne oszczednosci nie sa traktowane jak zero, dopoki nie wpiszesz wartosci.</div>
       </div>
 
-      <div class="panel">
+      <div class="panel budget-panel" data-tab-panel="balance">
         <div class="panel-head">
           <h2>3. Salda kont i porownanie z planem</h2>
           <p>Po prawej stronie wpisujesz stany kont, lokat, IKE/IKZE, obligacji i brokerow. Suma jest porownywana z planem rocznym.</p>
@@ -435,6 +485,8 @@
       const balanceTable = document.getElementById("balance-table");
       const annualTable = document.getElementById("annual-table");
       const yearNotesEl = document.getElementById("year-notes");
+      const workspaceEl = document.querySelector(".workspace");
+      const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
 
       function emptyMonth() {
         return { balance: {} };
@@ -703,6 +755,15 @@
         renderAnnual(yearData);
       }
 
+      function setActiveTab(tab) {
+        const nextTab = ["all", "income", "saving", "balance"].includes(tab) ? tab : "all";
+        workspaceEl.dataset.activeTab = nextTab;
+        tabButtons.forEach(function (button) {
+          button.classList.toggle("is-active", button.dataset.tab === nextTab);
+        });
+        localStorage.setItem("invStrBudgetPlanner.activeTab", nextTab);
+      }
+
       function updateFromInput(input, rerender) {
         const yearData = currentYearData();
         const month = yearData.months[Number(input.dataset.month)];
@@ -765,6 +826,12 @@
         state.activeYear = yearSelect.value;
         saveState();
         render();
+      });
+
+      tabButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          setActiveTab(button.dataset.tab);
+        });
       });
 
       document.getElementById("add-year").addEventListener("click", function () {
@@ -831,6 +898,7 @@
       });
 
       render();
+      setActiveTab(localStorage.getItem("invStrBudgetPlanner.activeTab") || "all");
     })();
   </script>
 </body>
