@@ -151,6 +151,7 @@ def write_html(switches: pd.DataFrame) -> None:
       </tbody>
     </table>
   </main>
+  <script src="../assets/back_to_top.js"></script>
 </body>
 </html>
 """

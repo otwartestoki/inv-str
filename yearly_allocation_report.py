@@ -170,6 +170,7 @@ def main() -> None:
       applyStrategy(savedStrategy());
     }})();
   </script>
+  <script src="../assets/back_to_top.js"></script>
 </body>
 </html>
 """

@@ -161,6 +161,7 @@ def write_html(annual_return: pd.DataFrame, annual_dd: pd.DataFrame) -> None:
       applyStrategy(savedStrategy());
     }})();
   </script>
+  <script src="../assets/back_to_top.js"></script>
 </body>
 </html>
 """

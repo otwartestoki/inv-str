@@ -1463,6 +1463,7 @@ def write_reports(result: BacktestResult) -> None:
       </ul>
     </section>
   </main>
+  <script src="../assets/back_to_top.js"></script>
 </body>
 </html>
 """

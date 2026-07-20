@@ -145,6 +145,7 @@ def write_html(data: pd.DataFrame) -> None:
       <tbody>{metric_table(data)}</tbody>
     </table>
   </main>
+  <script src="../assets/back_to_top.js"></script>
 </body>
 </html>
 """

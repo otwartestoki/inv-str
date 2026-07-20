@@ -274,6 +274,7 @@ def write_html(summary: pd.DataFrame, detail: pd.DataFrame) -> None:
       applyStrategy(savedStrategy());
     }})();
   </script>
+  <script src="../assets/back_to_top.js"></script>
 </body>
 </html>
 """
