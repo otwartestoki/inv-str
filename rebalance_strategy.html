@@ -479,7 +479,7 @@
           <label for="rebalance-manual-total">Suma portfela</label>
           <input id="rebalance-manual-total" inputmode="decimal" placeholder="opcjonalnie, np. 100000">
         </div>
-        <p class="rebalance-hint">Mozesz wpisac kwoty albo procenty. Kwota ma pierwszenstwo; akcje sa jedna pula. Czesc obligacyjna jest dzielona na trzy koszyki: 34% polskie skarbowe nominalne, 33% pozostale polskie obligacje oraz 33% zagraniczne obligacje. W koszykach polskim i zagranicznym proporcja stale/zmienne zmienia sie wedlug cyklu stop procentowych. Przy strategii lewarowanej cel akcji w tej tabeli jest wartoscia gotowkowa ETF-ow 1x/2x/3x, a nie ekspozycja brutto. Panel podpowiada transakcje dopiero po odchyleniu o 5 p.p.</p>
+        <p class="rebalance-hint">Mozesz wpisac kwoty albo procenty. Kwota ma pierwszenstwo; akcje sa jedna pula. Czesc obligacyjna jest dzielona na trzy koszyki: 34% polskie skarbowe nominalne, 33% pozostale polskie obligacje oraz 33% zagraniczne obligacje. W koszyku zagranicznym IDTL traktuj jako obligacje stale/duration, a osobne pole sluzy obligacjom zmiennoprocentowym. Przy strategii lewarowanej cel akcji w tej tabeli jest wartoscia gotowkowa ETF-ow 1x/2x/3x, a nie ekspozycja brutto. Panel podpowiada transakcje dopiero po odchyleniu o 5 p.p.</p>
       </div>
       <div class="rebalance-grid" id="rebalance-inputs"></div>
       <div class="rebalance-actions">
@@ -611,12 +611,12 @@
         },
         {
           key: "foreign_fixed",
-          label: "Zagraniczne notowane na gieldzie, mix",
+          label: "Zagraniczne stale % / duration (IDTL)",
           group: "foreign_fixed"
         },
         {
           key: "foreign_float",
-          label: "Zagraniczne zmienno % (IDTL)",
+          label: "Zagraniczne zmienno %",
           group: "foreign_float"
         },
         {
@@ -630,8 +630,8 @@
         { key: "pl_nominal", label: "Polskie skarbowe nominalne" },
         { key: "pl_fixed", label: "Polskie skarbowe stalo % (FPC1140)" },
         { key: "pl_float", label: "Polskie skarbowe/korporacyjne zmienno %" },
-        { key: "foreign_fixed", label: "Zagraniczne notowane na gieldzie, mix" },
-        { key: "foreign_float", label: "Zagraniczne zmienno % (IDTL)" },
+        { key: "foreign_fixed", label: "Zagraniczne stale % / duration (IDTL)" },
+        { key: "foreign_float", label: "Zagraniczne zmienno %" },
         { key: "gold", label: "Zloto" }
       ];
       const leveragedRows = [
