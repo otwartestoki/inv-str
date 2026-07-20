@@ -460,15 +460,44 @@
         return { activeYear: activeYear, years: years };
       }
 
+      function isBlank(value) {
+        return value === null || value === undefined || String(value).trim() === "";
+      }
+
+      function mergeSeedYear(targetYear, seedYear) {
+        const target = normalizeYearData(targetYear || {});
+        const seed = normalizeYearData(seedYear || {});
+        if (!target.notes && seed.notes) {
+          target.notes = seed.notes;
+        }
+        seed.months.forEach(function (seedMonth, index) {
+          const targetMonth = target.months[index];
+          Object.keys(seedMonth).forEach(function (key) {
+            if (key === "balance") {
+              return;
+            }
+            if (isBlank(targetMonth[key]) && !isBlank(seedMonth[key])) {
+              targetMonth[key] = seedMonth[key];
+            }
+          });
+          targetMonth.balance = targetMonth.balance || {};
+          const seedBalance = seedMonth.balance || {};
+          Object.keys(seedBalance).forEach(function (key) {
+            if (isBlank(targetMonth.balance[key]) && !isBlank(seedBalance[key])) {
+              targetMonth.balance[key] = seedBalance[key];
+            }
+          });
+        });
+        return target;
+      }
+
       function loadState() {
         const defaults = seededState();
         try {
           const parsed = JSON.parse(localStorage.getItem(storageKey) || "{}");
           if (parsed && parsed.years) {
             Object.keys(defaults.years).forEach(function (year) {
-              if (!parsed.years[year]) {
-                parsed.years[year] = defaults.years[year];
-              }
+              parsed.years[year] = mergeSeedYear(parsed.years[year], defaults.years[year]);
             });
             if (!parsed.activeYear) {
               parsed.activeYear = defaults.activeYear;
