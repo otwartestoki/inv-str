@@ -388,6 +388,20 @@
       min-width: 82px;
       max-width: 82px;
     }
+    #income-table th.income-plus,
+    #income-table td.income-plus {
+      background: #f0f8f4;
+    }
+    #income-table th.income-minus,
+    #income-table td.income-minus {
+      background: #fff3f1;
+    }
+    #income-table th.income-plus {
+      color: #27634b;
+    }
+    #income-table th.income-minus {
+      color: #8a3b32;
+    }
     td.readonly {
       background: #fbfaf6;
       color: #333;
@@ -1350,7 +1364,10 @@
 
       function renderIncomeTable(yearData) {
         const rows = [];
-        rows.push("<thead><tr><th class=\"month-col\">Miesiac</th>" + incomeFields.map(function ([, label]) { return `<th class="num-col">${label}</th>`; }).join("") + salaryCommentFields.map(function ([, label]) { return `<th class="comment-col">${label}</th>`; }).join("") + "<th class=\"calc-col\">Wplywy</th><th class=\"calc-col\">Plan koszty</th><th class=\"calc-col\">Prognoza oszcz.</th></tr></thead>");
+        rows.push("<thead><tr><th class=\"month-col\">Miesiac</th>" + incomeFields.map(function ([key, label]) {
+          const tone = ["ewa", "jacek", "bonus", "benefit"].includes(key) ? "income-plus" : "income-minus";
+          return `<th class="num-col ${tone}">${label}</th>`;
+        }).join("") + salaryCommentFields.map(function ([, label]) { return `<th class="comment-col">${label}</th>`; }).join("") + "<th class=\"calc-col income-plus\">Wplywy</th><th class=\"calc-col income-minus\">Plan koszty</th><th class=\"calc-col\">Prognoza oszcz.</th></tr></thead>");
         rows.push("<tbody>");
         yearData.months.forEach(function (month, index) {
           const income = monthIncome(month);
@@ -1358,13 +1375,14 @@
           rows.push("<tr>");
           rows.push(`<td class="month-cell month-col">${monthLabels[index]} ${state.activeYear}</td>`);
           incomeFields.forEach(function ([key]) {
-            rows.push(`<td class="num-col">${inputHtml("month", index, key, month[key])}</td>`);
+            const tone = ["ewa", "jacek", "bonus", "benefit"].includes(key) ? "income-plus" : "income-minus";
+            rows.push(`<td class="num-col ${tone}">${inputHtml("month", index, key, month[key])}</td>`);
           });
           salaryCommentFields.forEach(function ([key]) {
             rows.push(`<td class="comment-col">${inputHtml("month", index, key, month[key], true)}</td>`);
           });
-          rows.push(`<td class="readonly calc-col">${formatMoney(income)}</td>`);
-          rows.push(`<td class="readonly calc-col">${formatMoney(costs)}</td>`);
+          rows.push(`<td class="readonly calc-col income-plus">${formatMoney(income)}</td>`);
+          rows.push(`<td class="readonly calc-col income-minus">${formatMoney(costs)}</td>`);
           rows.push(`<td class="readonly calc-col ${monthPlannedSaving(month) >= 0 ? "good" : "bad"}">${formatMoney(monthPlannedSaving(month))}</td>`);
           rows.push("</tr>");
         });
