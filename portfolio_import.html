@@ -176,7 +176,7 @@
     </section>
 
     <section class="grid" aria-label="Metryki portfela">
-      <div class="panel"><div class="metric" id="balanceMetric">0 PLN<small>Szacowane saldo na podstawie rozpoznanych operacji</small></div></div>
+      <div class="panel"><div class="metric" id="balanceMetric">0 PLN<small>Saldo: gotowka + odtworzone/snapshotowane aktywa</small></div></div>
       <div class="panel"><div class="metric" id="cagrMetric">n/d<small>CAGR z dziennych sald po przeplywach</small></div></div>
       <div class="panel"><div class="metric" id="ddMetric">n/d<small>Max drawdown salda</small></div></div>
       <div class="panel"><div class="metric" id="recordsMetric">0<small>Unikalne zaimportowane rekordy</small></div></div>
@@ -189,7 +189,18 @@
 
     <section class="grid">
       <div class="panel">
-        <h2>Aktualna ekspozycja</h2>
+        <h2>Salda kont</h2>
+        <div id="accountTable"></div>
+      </div>
+      <div class="panel">
+        <h2>Aktywa wedlug waloru</h2>
+        <div id="assetTable"></div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Ekspozycja wedlug klasy aktywow</h2>
         <div id="exposureTable"></div>
       </div>
       <div class="panel">
@@ -206,9 +217,13 @@
           <thead>
             <tr>
               <th>Data</th>
+              <th>Konto</th>
               <th>Opis</th>
               <th>Symbol</th>
               <th>Kwota</th>
+              <th>Gotowka</th>
+              <th>Pozycja</th>
+              <th>Ilosc</th>
               <th>Waluta</th>
               <th>Typ operacji</th>
               <th>Rodzaj waloru</th>
@@ -226,6 +241,7 @@
     const LEGACY_STORAGE_KEY = "invStrPortfolioRecords.v1";
     const TARGET = {
       us_equity: 0.40,
+      polish_equity: 0.00,
       world_equity: 0.00,
       tech_equity: 0.00,
       long_bond: 0.15,
@@ -235,6 +251,7 @@
     };
     const SECURITY_LABELS = {
       us_equity: "Akcje USA / SPX",
+      polish_equity: "Akcje Polska",
       world_equity: "Akcje swiat",
       tech_equity: "Tech / NDX",
       long_bond: "Obligacje 30+",
@@ -342,8 +359,14 @@
       if (!date) return null;
       const description = firstValue(obj, ["opis", "description", "tytul_operacji", "tytu_operacji", "szczegoly", "szczego_y", "typ_zlecenia", "transaction_type"]) || "";
       const type = firstValue(obj, ["typ", "transaction_type", "typ_zlecenia"]) || "";
-      const symbol = firstValue(obj, ["symbol", "fundusz_docelowy", "fundusz_zrodlowy"]) || extractSymbol(description);
-      let amountRaw = firstValue(obj, ["net_amount", "net_amount_", "kwota", "wartosc_pln_transakcji", "warto_pln_transakcji", "wartosc_zlecenia", "warto_zlecenia", "gross_amount"]);
+      const status = firstValue(obj, ["status_zlecenia", "status"]) || "";
+      if (status && !/zrealizowane|executed|filled|posted|settled/i.test(status)) return null;
+      const symbol = firstValue(obj, ["symbol", "fundusz_docelowy", "fundusz_zrodlowy"]) || extractSymbol(`${description} ${type}`);
+      const quantityRaw = firstValue(obj, ["quantity", "liczba_jednostek_fundusz_docelowy", "liczba_jednostek_fundusz_zrodlowy"]);
+      const priceRaw = firstValue(obj, ["price", "cena", "kurs"]);
+      const grossRaw = firstValue(obj, ["gross_amount", "gross_amount_", "wartosc_zlecenia", "warto_zlecenia"]);
+      const commissionRaw = firstValue(obj, ["commission", "prowizja"]);
+      let amountRaw = firstValue(obj, ["net_amount", "net_amount_", "kwota", "wartosc_pln_transakcji", "warto_pln_transakcji", "gross_amount", "gross_amount_", "wartosc_zlecenia", "warto_zlecenia"]);
       if (!amountRaw) amountRaw = lastNumericCell(row);
       let amount = parseNumber(amountRaw);
       if (!Number.isFinite(amount)) return null;
@@ -351,8 +374,29 @@
       const currency = firstValue(obj, ["waluta", "price_currency"]) || "PLN";
       const operationType = classifyOperation(`${description} ${type} ${symbol}`, amount);
       const securityType = classifySecurity(`${description} ${type} ${symbol}`);
-      const id = fingerprint([source, date, description, type, symbol, amount.toFixed(4), currency].join("|"));
-      return { id, date, description: `${type ? type + " - " : ""}${description}`.trim(), symbol, amount, currency, operationType, securityType, source };
+      const quantity = parseNumber(quantityRaw);
+      const price = parseNumber(priceRaw);
+      const grossAmount = parseNumber(grossRaw);
+      const commission = parseNumber(commissionRaw);
+      const account = firstValue(obj, ["account", "rachunek", "nr_rachunku"]) || accountFromSource(source);
+      const normalized = makeRecord({
+        date,
+        account,
+        description: `${type ? type + " - " : ""}${description}`.trim(),
+        symbol,
+        amount,
+        currency,
+        operationType,
+        securityType,
+        quantity: Number.isFinite(quantity) ? quantity : "",
+        price: Number.isFinite(price) ? price : "",
+        grossAmount: Number.isFinite(grossAmount) ? grossAmount : "",
+        commission: Number.isFinite(commission) ? commission : "",
+        status,
+        source
+      });
+      normalized.id = fingerprint([source, date, normalized.account, description, type, symbol, amount.toFixed(4), normalized.quantity, normalized.grossAmount, currency].join("|"));
+      return normalized;
     }
 
     function classifyOperation(text, amount) {
@@ -380,13 +424,18 @@
     }
 
     function render() {
-      const series = buildDailySeries(records);
-      const current = currentExposure(records);
-      const total = Object.values(current).reduce((sum, value) => sum + Math.max(0, value), 0);
-      document.getElementById("balanceMetric").innerHTML = `${formatMoney(total)}<small>Szacowane saldo na podstawie rozpoznanych operacji</small>`;
+      records = records.map(normalizeRecordShape);
+      const state = buildPortfolioState(records);
+      const series = state.series;
+      const current = state.exposure;
+      const total = state.total;
+      const needsReview = records.filter(needsManualReview).length;
+      document.getElementById("balanceMetric").innerHTML = `${formatMoney(total)}<small>Saldo: gotowka + odtworzone/snapshotowane aktywa</small>`;
       document.getElementById("cagrMetric").innerHTML = `${formatPct(calcCagr(series))}<small>CAGR z dziennych sald po przeplywach</small>`;
       document.getElementById("ddMetric").innerHTML = `${formatPct(calcMaxDrawdown(series))}<small>Max drawdown salda</small>`;
-      document.getElementById("recordsMetric").innerHTML = `${records.length}<small>Unikalne zaimportowane rekordy</small>`;
+      document.getElementById("recordsMetric").innerHTML = `${records.length}<small>Unikalne rekordy; ${needsReview} do klasyfikacji</small>`;
+      renderAccounts(state);
+      renderAssets(state);
       renderExposure(current, total);
       renderRebalance(current, total);
       renderRecords();
@@ -430,6 +479,129 @@
       return rec.amount;
     }
 
+    function buildPortfolioState(items) {
+      const sorted = items.slice().sort((a, b) => a.date.localeCompare(b.date) || (a.source || "").localeCompare(b.source || ""));
+      const accounts = new Map();
+      const assets = new Map();
+      const exposure = Object.fromEntries(CATEGORIES.map(category => [category, 0]));
+      const series = [];
+      let lastDate = "";
+
+      for (const raw of sorted) {
+        const rec = normalizeRecordShape(raw);
+        if (rec.date !== lastDate) {
+          if (lastDate) series.push({ date: lastDate, value: portfolioTotal(accounts), external: portfolioExternal(accounts) });
+          lastDate = rec.date;
+        }
+        const accountKey = rec.account || accountFromSource(rec.source);
+        const assetKey = `${accountKey}|${rec.securityType}|${rec.symbol || rec.securityType}`;
+        const account = ensureAccount(accounts, accountKey);
+        const asset = ensureAsset(assets, assetKey, rec);
+        const flow = ledgerImpact(rec);
+
+        account.cash += flow.cash;
+        account.assets += flow.position;
+        account.external += flow.external;
+        account.income += flow.income;
+        account.fees += flow.fees;
+        asset.quantity += flow.quantity;
+        asset.value += flow.position;
+        asset.income += flow.income;
+        asset.fees += flow.fees;
+
+        if (rec.operationType === "position_snapshot") {
+          const previousValue = asset.value;
+          asset.value = Math.max(0, rec.amount);
+          asset.quantity = Number.isFinite(Number(rec.quantity)) ? Number(rec.quantity) : asset.quantity;
+          asset.snapshotDate = rec.date;
+          account.assets += asset.value - previousValue;
+          account.hasSnapshot = true;
+        }
+      }
+
+      if (lastDate) series.push({ date: lastDate, value: portfolioTotal(accounts), external: portfolioExternal(accounts) });
+      for (const account of accounts.values()) {
+        exposure.floating_bond = (exposure.floating_bond || 0) + account.cash;
+      }
+      for (const asset of assets.values()) {
+        exposure[asset.securityType] = (exposure[asset.securityType] || 0) + Math.max(0, asset.value);
+      }
+
+      return {
+        accounts: Array.from(accounts.values()).sort((a, b) => b.total - a.total),
+        assets: Array.from(assets.values()).filter(asset => Math.abs(asset.value) > 0.01 || Math.abs(asset.quantity) > 0.0001).sort((a, b) => b.value - a.value),
+        exposure,
+        series,
+        total: portfolioTotal(accounts)
+      };
+    }
+
+    function ensureAccount(accounts, key) {
+      if (!accounts.has(key)) accounts.set(key, { account: key, cash: 0, assets: 0, external: 0, income: 0, fees: 0, hasSnapshot: false, total: 0 });
+      return accounts.get(key);
+    }
+
+    function ensureAsset(assets, key, rec) {
+      if (!assets.has(key)) {
+        assets.set(key, {
+          account: rec.account || accountFromSource(rec.source),
+          symbol: rec.symbol || rec.securityType || "unknown",
+          securityType: rec.securityType || legacySecurityType(rec.category),
+          quantity: 0,
+          value: 0,
+          income: 0,
+          fees: 0,
+          snapshotDate: ""
+        });
+      }
+      return assets.get(key);
+    }
+
+    function ledgerImpact(rec) {
+      const type = rec.operationType || legacyOperationType(rec);
+      const amount = Number(rec.amount) || 0;
+      const gross = Number.isFinite(Number(rec.grossAmount)) ? Number(rec.grossAmount) : amount;
+      const commission = Number.isFinite(Number(rec.commission)) ? Number(rec.commission) : 0;
+      const quantity = Number.isFinite(Number(rec.quantity)) ? Number(rec.quantity) : 0;
+      if (type === "transfer_ignore") return { cash: 0, position: 0, external: 0, income: 0, fees: 0, quantity: 0 };
+      if (type === "position_snapshot") return { cash: 0, position: 0, external: 0, income: 0, fees: 0, quantity: 0 };
+      if (type === "deposit") return { cash: Math.abs(amount), position: 0, external: Math.abs(amount), income: 0, fees: 0, quantity: 0 };
+      if (type === "withdrawal") return { cash: -Math.abs(amount), position: 0, external: -Math.abs(amount), income: 0, fees: 0, quantity: 0 };
+      if (type === "buy") {
+        const invested = Math.abs(gross || amount);
+        return { cash: -Math.abs(amount), position: invested, external: 0, income: 0, fees: -Math.abs(commission), quantity: Math.abs(quantity) };
+      }
+      if (type === "sell") {
+        const proceeds = Math.abs(gross || amount);
+        return { cash: Math.abs(amount), position: -proceeds, external: 0, income: 0, fees: -Math.abs(commission), quantity: -Math.abs(quantity) };
+      }
+      if (type === "dividend_interest") return { cash: Math.abs(amount), position: 0, external: 0, income: Math.abs(amount), fees: 0, quantity: 0 };
+      if (type === "fee_tax") return { cash: -Math.abs(amount), position: 0, external: 0, income: 0, fees: -Math.abs(amount), quantity: 0 };
+      if (type === "adjustment") return { cash: amount, position: 0, external: 0, income: 0, fees: 0, quantity };
+      return { cash: amount, position: 0, external: 0, income: 0, fees: 0, quantity: 0 };
+    }
+
+    function portfolioTotal(accounts) {
+      let total = 0;
+      for (const account of accounts.values()) {
+        account.total = account.cash + account.assets;
+        total += account.total;
+      }
+      return total;
+    }
+
+    function portfolioExternal(accounts) {
+      let total = 0;
+      for (const account of accounts.values()) total += account.external;
+      return total;
+    }
+
+    function needsManualReview(rec) {
+      if (rec.operationType === "unknown") return true;
+      if (["deposit", "withdrawal", "fee_tax", "transfer_ignore"].includes(rec.operationType)) return false;
+      return rec.securityType === "unknown";
+    }
+
     function legacySecurityType(category) {
       return CATEGORIES.includes(category) ? category : "unknown";
     }
@@ -438,6 +610,41 @@
       if (rec.operationType) return rec.operationType;
       const text = `${rec.description || ""} ${rec.symbol || ""}`;
       return classifyOperation(text, rec.amount);
+    }
+
+    function renderAccounts(state) {
+      const rows = state.accounts.map(account => `
+        <tr>
+          <td>${escapeHtml(account.account)}</td>
+          <td>${formatMoney(account.cash)}</td>
+          <td>${formatMoney(account.assets)}</td>
+          <td>${formatMoney(account.total)}</td>
+          <td>${formatMoney(account.external)}</td>
+          <td>${formatMoney(account.income)}</td>
+          <td>${formatMoney(account.fees)}</td>
+          <td>${account.hasSnapshot ? "snapshot + transakcje" : "transakcje"}</td>
+        </tr>
+      `).join("");
+      document.getElementById("accountTable").innerHTML = `<table><thead><tr><th>Konto</th><th>Gotowka</th><th>Aktywa</th><th>Saldo</th><th>Wplaty netto</th><th>Dochody</th><th>Koszty</th><th>Metoda</th></tr></thead><tbody>${rows || "<tr><td colspan=\"8\">Brak danych.</td></tr>"}</tbody></table>`;
+    }
+
+    function renderAssets(state) {
+      const rows = state.assets.map(asset => {
+        const share = state.total > 0 ? Math.max(0, asset.value) / state.total : 0;
+        return `
+          <tr>
+            <td>${escapeHtml(asset.account)}</td>
+            <td>${escapeHtml(asset.symbol)}</td>
+            <td>${SECURITY_LABELS[asset.securityType] || asset.securityType}</td>
+            <td>${formatNumber(asset.quantity)}</td>
+            <td>${formatMoney(asset.value)}</td>
+            <td>${formatPct(share)}</td>
+            <td>${formatMoney(asset.income)}</td>
+            <td>${asset.snapshotDate || "transakcje"}</td>
+          </tr>
+        `;
+      }).join("");
+      document.getElementById("assetTable").innerHTML = `<table><thead><tr><th>Konto</th><th>Walor</th><th>Klasa</th><th>Ilosc</th><th>Wartosc</th><th>Udzial</th><th>Dochody</th><th>Wycena</th></tr></thead><tbody>${rows || "<tr><td colspan=\"8\">Brak danych.</td></tr>"}</tbody></table>`;
     }
 
     function renderExposure(current, total) {
@@ -469,9 +676,13 @@
       body.innerHTML = records.slice().sort((a, b) => b.date.localeCompare(a.date)).map(rec => `
         <tr>
           <td>${escapeHtml(rec.date)}</td>
+          <td>${escapeHtml(rec.account || accountFromSource(rec.source))}</td>
           <td>${escapeHtml(rec.description || "")}</td>
           <td>${escapeHtml(rec.symbol || "")}</td>
           <td>${formatMoney(rec.amount)}</td>
+          <td>${formatMoney(ledgerImpact(rec).cash)}</td>
+          <td>${formatMoney(ledgerImpact(rec).position)}</td>
+          <td>${formatNumber(rec.quantity)}</td>
           <td><span class="pill">${escapeHtml(rec.currency || "PLN")}</span></td>
           <td>${operationSelect(rec)}</td>
           <td>${securitySelect(rec)}</td>
@@ -586,7 +797,7 @@
         const maturity = idx.maturity >= 0 ? row[idx.maturity] : "";
         const description = `Stan obligacji ${symbol}${quantity ? `, liczba ${quantity}` : ""}${maturity ? `, wykup ${maturity}` : ""}`;
         const id = fingerprint([source, date, symbol, amount.toFixed(4), maturity].join("|"));
-        return { id, date, description, symbol, amount, currency: "PLN", operationType: "position_snapshot", securityType: classifySecurity(symbol), source };
+        return makeRecord({ id, date, account: accountFromSource(source), description, symbol, amount, currency: "PLN", operationType: "position_snapshot", securityType: classifySecurity(symbol), quantity, source });
       }).filter(Boolean);
     }
 
@@ -812,6 +1023,7 @@
 
     function normalizeHeader(value) {
       return value.toLowerCase()
+        .replace(/[ąćęłńóśźż]/g, ch => ({ a: "a", ą: "a", ć: "c", ę: "e", ł: "l", ń: "n", ó: "o", ś: "s", ź: "z", ż: "z" }[ch] || ch))
         .replace(/^#/, "")
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-z0-9]+/g, "_")
@@ -837,9 +1049,74 @@
     function parseNumber(value) {
       const v = String(value || "").replace(/\s/g, "").replace(/\u00a0/g, "");
       if (!v) return NaN;
+      if (v === "-" || v === "–") return NaN;
       if (v.includes(",") && !v.includes(".")) return Number(v.replace(",", "."));
       if (v.includes(",") && v.includes(".")) return Number(v.replace(/,/g, ""));
       return Number(v);
+    }
+
+    function makeRecord(rec) {
+      const operationType = rec.operationType || classifyOperation(`${rec.description || ""} ${rec.symbol || ""}`, rec.amount);
+      const securityType = rec.securityType || classifySecurity(`${rec.description || ""} ${rec.symbol || ""}`);
+      return {
+        id: rec.id || "",
+        date: rec.date || "",
+        account: rec.account || accountFromSource(rec.source),
+        description: rec.description || "",
+        symbol: rec.symbol || extractSymbol(rec.description) || "",
+        amount: Number(rec.amount) || 0,
+        currency: rec.currency || "PLN",
+        operationType,
+        securityType,
+        quantity: rec.quantity === "" || rec.quantity === undefined ? "" : Number(rec.quantity),
+        price: rec.price === "" || rec.price === undefined ? "" : Number(rec.price),
+        grossAmount: rec.grossAmount === "" || rec.grossAmount === undefined ? "" : Number(rec.grossAmount),
+        commission: rec.commission === "" || rec.commission === undefined ? "" : Number(rec.commission),
+        status: rec.status || "",
+        source: rec.source || ""
+      };
+    }
+
+    function accountFromSource(source) {
+      const s = String(source || "");
+      if (/U\d+\.TRANSACTIONS|IBKR/i.test(s)) return "IBKR";
+      if (/StanRachunkuRejestrowego|obligacje/i.test(s)) return "ObligacjeSkarbowe";
+      if (/eMAKLER/i.test(s)) {
+        const match = s.match(/\((\d+)\)/);
+        return match ? `eMAKLER ${match[1]}` : "eMAKLER";
+      }
+      if (/615382/.test(s)) return "mBank/BOŚ 615382";
+      if (/837205/.test(s)) return "mBank/BOŚ 837205";
+      if (/Potwierdzenie_transakcji/i.test(s)) return "Fundusze";
+      return s.replace(/\.[^.]+$/, "").slice(0, 48) || "Nieznane konto";
+    }
+
+    function classifyOperation(text, amount) {
+      const s = String(text || "").toUpperCase();
+      if (/ODRZUCONE|BLOKADA|ODBLOKOWANIE|MODYFIKACJA|ANULOWANIA|FX TRANSLATIONS|PRZEKSIEG|PRZEKSI/.test(s)) return "transfer_ignore";
+      if (/PRZELEW DO DM|PRZELEW DO|PRZELEW/.test(s)) return amount >= 0 ? "deposit" : "withdrawal";
+      if (/WPŁATA|WPLATA|DEPOSIT|ELECTRONIC FUND TRANSFER/.test(s)) return amount >= 0 ? "deposit" : "withdrawal";
+      if (/WYPŁATA|WYPLATA|WITHDRAWAL/.test(s) && !/DYWIDEND|ODSET/.test(s)) return "withdrawal";
+      if (/DYWIDEND|DIVIDEND|ODSET|INTEREST/.test(s)) return "dividend_interest";
+      if (/PODATEK|TAX|PROWIZJ|COMMISSION|FEE|OPŁAT|OPLAT/.test(s)) return "fee_tax";
+      if (/ODKUPIENIE|SELL|SPRZEDA|ZBYCIE/.test(s)) return "sell";
+      if (/NABYCIE|BUY|KUPN|ZAKUP/.test(s)) return "buy";
+      if (/ZAMIANA|KONWERSJA/.test(s)) return "adjustment";
+      if (/ADJUSTMENT|KOREKTA/.test(s)) return "adjustment";
+      return "unknown";
+    }
+
+    function classifySecurity(text) {
+      const s = String(text || "").toUpperCase();
+      if (/(GLD|IAU|SGLN|PHAU|ZLOTO|ZŁOTO|GOLD)/.test(s)) return "gold";
+      if (/(QQQ|NDX|NASDAQ|TECH|EQQQ|CNDX)/.test(s)) return "tech_equity";
+      if (/(FPC0631|IZ0836|FLOAT|FLOATING|ZMIENN)/.test(s)) return "floating_bond";
+      if (/(IDTL|TLT|EDV|30\+|20\+|LONG|IE00BSKRJZ44|FPC1140|EDO|ROD|COI|TOS|OTS)/.test(s)) return "long_bond";
+      if (/(JSW|JASTRZEBSKA|PL[A-Z0-9]{10}|WIG|GPW|TEXT|TARCZYNSKI|EUROSNACK|PCC ROKITA|DELKO)/.test(s)) return "polish_equity";
+      if (/(VWRL|VWCE|VGWL|ALL-WORLD|ALL WORLD|IE00B3RBWM25|AKCJE SWIAT|EMERYTALNY 2045|EMERYTALNY 2065|ALLIANZ PLAN)/.test(s)) return "world_equity";
+      if (/(SPY|VOO|IVV|S&P|SP500|S AND P|USA)/.test(s)) return "us_equity";
+      if (/(PRZELEW|CASH|GOTOW|ODSET|DYWIDEND|DIVIDEND|WPŁATA|WPLATA)/.test(s)) return "floating_bond";
+      return "unknown";
     }
 
     function lastNumericCell(row) {
@@ -868,6 +1145,12 @@
       return `${Math.round((Number(value) || 0)).toLocaleString("pl-PL")} PLN`;
     }
 
+    function formatNumber(value) {
+      const number = Number(value);
+      if (!Number.isFinite(number) || Math.abs(number) < 0.0000001) return "";
+      return number.toLocaleString("pl-PL", { maximumFractionDigits: 4 });
+    }
+
     function formatPct(value) {
       return Number.isFinite(value) ? `${(value * 100).toFixed(2)}%` : "n/d";
     }
@@ -888,12 +1171,13 @@
     }
 
     function normalizeRecordShape(rec) {
-      return {
+      return makeRecord({
         ...rec,
         operationType: rec.operationType || legacyOperationType(rec),
         securityType: rec.securityType || legacySecurityType(rec.category),
-        currency: rec.currency || "PLN"
-      };
+        currency: rec.currency || "PLN",
+        account: rec.account || accountFromSource(rec.source)
+      });
     }
 
     function saveRecords() {
@@ -901,8 +1185,12 @@
     }
 
     function exportRecords() {
-      const header = ["date", "description", "symbol", "amount", "currency", "operationType", "securityType", "source", "id"];
-      const rows = records.map(rec => header.map(key => csvEscape(rec[key])).join(","));
+      const header = ["date", "account", "description", "symbol", "amount", "cashImpact", "positionImpact", "quantity", "price", "grossAmount", "commission", "currency", "operationType", "securityType", "source", "id"];
+      const rows = records.map(rec => {
+        const flow = ledgerImpact(rec);
+        const out = { ...rec, cashImpact: flow.cash, positionImpact: flow.position };
+        return header.map(key => csvEscape(out[key])).join(",");
+      });
       const blob = new Blob([header.join(",") + "\n" + rows.join("\n")], { type: "text/csv;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
