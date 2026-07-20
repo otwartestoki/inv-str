@@ -284,7 +284,7 @@
         </label>
         <label>Wzrost przychodow
           <input id="income-growth" inputmode="decimal">
-          <span class="field-hint">Roczny nominalny wzrost przychodu z pracy do wieku konca pracy.</span>
+          <span class="field-hint">Realny wzrost ponad CPI; nominalnie przychod rosnie o CPI + ten wzrost.</span>
         </label>
         <label>CAGR strategii
           <input id="strategy-cagr" inputmode="decimal">
@@ -306,7 +306,7 @@
         <button id="reset" class="secondary" type="button">Reset danych</button>
       </div>
       <div class="method-note">
-        <strong>Jak czytac zalozenia:</strong> jesli wpisujesz inflacje 2,5% i CAGR strategii 7%, model zaklada nominalny zwrot portfela 7%, czyli realnie okolo 4,4% przed podatkami i kosztami. Wzrost przychodow 1,8% oznacza nominalny wzrost wynagrodzen, a nie wzrost ponad inflacje. Wzrost ZUS to zalozona waloryzacja swiadczenia po rozpoczeciu emerytury.
+        <strong>Jak czytac zalozenia:</strong> wydatki rosna o CPI. Przychody z pracy rosna nominalnie o CPI plus wpisany wzrost przychodow, czyli pole wzrostu przychodow jest realnym wzrostem ponad inflacje. Jesli wpisujesz inflacje 2,5% i CAGR strategii 7%, model zaklada nominalny zwrot portfela 7%, czyli realnie okolo 4,4% przed podatkami i kosztami. Wzrost ZUS to zalozona nominalna waloryzacja swiadczenia po rozpoczeciu emerytury.
       </div>
     </section>
 
@@ -369,6 +369,7 @@
   <script>
     (function () {
       const storageKey = "invStrRetirementPlanner.v1";
+      const modelVersion = 2;
       const seedRows = [
         [35, 2021, 142, 174, 87, 32, "", ""],
         [36, 2022, 171, 193, 82, 22, "", ""],
@@ -424,6 +425,7 @@
       ];
 
       const defaults = {
+        modelVersion: modelVersion,
         assumptions: {
           baseYear: 2026,
           baseAge: 40,
@@ -477,6 +479,7 @@
         try {
           const parsed = JSON.parse(localStorage.getItem(storageKey) || "{}");
           if (parsed && parsed.rows && parsed.assumptions) {
+            parsed.modelVersion = parsed.modelVersion || 1;
             return parsed;
           }
         } catch (error) {}
@@ -546,7 +549,7 @@
           const row = rows[i];
           row.expenses = Math.round(numberValue(previous.expenses) * (1 + a.cpiRate / 100));
           if (row.age <= a.workUntilAge) {
-            row.income = Math.round(numberValue(previous.income) * (1 + a.incomeGrowth / 100));
+            row.income = Math.round(numberValue(previous.income) * (1 + (a.cpiRate + a.incomeGrowth) / 100));
             row.saving = Math.max(0, row.income - row.expenses);
             row.zus = "";
             row.withdrawal = "";
@@ -576,6 +579,7 @@
           return;
         }
         state.rows = rows;
+        state.modelVersion = modelVersion;
         saveState();
         render();
       }
@@ -671,10 +675,10 @@
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, width, height);
         ctx.font = "11px Segoe UI, Arial, sans-serif";
-        return { ctx, width, height, left: 58, right: 16, top: 12, bottom: 32 };
+        return { ctx, width, height, left: 58, right: 16, top: 30, bottom: 32 };
       }
 
-      function drawAxes(chart, years, minValue, maxValue) {
+      function drawAxes(chart, years, ages, minValue, maxValue) {
         const { ctx, width, height, left, right, top, bottom } = chart;
         const plotW = width - left - right;
         const plotH = height - top - bottom;
@@ -707,6 +711,16 @@
             ctx.fillText(String(year), x, top + plotH + 9);
           }
         });
+        ctx.textBaseline = "bottom";
+        ctx.fillStyle = "#555";
+        ages.forEach(function (age, index) {
+          if (index % 5 === 0 || index === ages.length - 1) {
+            const x = left + index / Math.max(1, ages.length - 1) * plotW;
+            ctx.fillText(String(age), x, top - 8);
+          }
+        });
+        ctx.textAlign = "left";
+        ctx.fillText("wiek", left, 11);
         ctx.strokeStyle = "#333";
         ctx.beginPath();
         ctx.moveTo(left, top);
@@ -743,20 +757,22 @@
       function drawBalanceChart() {
         const chart = setupChart(chartEls.balance);
         const years = state.rows.map(function (row) { return row.year; });
+        const ages = state.rows.map(function (row) { return row.age; });
         const balances = state.rows.map(function (row) { return numberValue(row.balance); });
         const maxValue = Math.max.apply(null, balances.concat([1])) * 1.08;
-        drawAxes(chart, years, 0, maxValue);
+        drawAxes(chart, years, ages, 0, maxValue);
         drawLineSeries(chart, years, balances, "#173b57", 0, maxValue);
       }
 
       function drawIncomeExpenseChart() {
         const chart = setupChart(chartEls.incomeExpense);
         const years = state.rows.map(function (row) { return row.year; });
+        const ages = state.rows.map(function (row) { return row.age; });
         const expenses = state.rows.map(function (row) { return numberValue(row.expenses) || NaN; });
         const income = state.rows.map(function (row) { return numberValue(row.income) || NaN; });
         const zus = state.rows.map(function (row) { return numberValue(row.zus) || NaN; });
         const maxValue = Math.max.apply(null, expenses.concat(income, zus).filter(Number.isFinite).concat([1])) * 1.12;
-        drawAxes(chart, years, 0, maxValue);
+        drawAxes(chart, years, ages, 0, maxValue);
         drawLineSeries(chart, years, expenses, "#d6453d", 0, maxValue);
         drawLineSeries(chart, years, income, "#2f6fdd", 0, maxValue);
         drawLineSeries(chart, years, zus, "#0b6e4f", 0, maxValue);
@@ -766,6 +782,7 @@
         const chart = setupChart(chartEls.cashflow);
         const { ctx, width, height, left, right, top, bottom } = chart;
         const years = state.rows.map(function (row) { return row.year; });
+        const ages = state.rows.map(function (row) { return row.age; });
         const values = state.rows.map(function (row) {
           return numberValue(row.saving) - numberValue(row.withdrawal);
         });
@@ -778,7 +795,7 @@
         const barW = Math.max(2, Math.min(8, groupW * 0.6));
         const xFor = function (index) { return left + index * groupW + groupW / 2; };
         const yFor = function (value) { return top + plotH - (value - minValue) / Math.max(1, maxValue - minValue) * plotH; };
-        drawAxes(chart, years, minValue, maxValue);
+        drawAxes(chart, years, ages, minValue, maxValue);
         const zeroY = yFor(0);
         values.forEach(function (value, index) {
           if (!value) return;
@@ -827,6 +844,14 @@
       });
       window.addEventListener("resize", drawChart);
 
+      if (state.modelVersion !== modelVersion) {
+        const rows = projectedRowsFor(state.assumptions);
+        if (rows.length) {
+          state.rows = rows;
+          state.modelVersion = modelVersion;
+          saveState();
+        }
+      }
       render();
     })();
   </script>
