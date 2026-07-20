@@ -146,8 +146,8 @@
     }
     .dashboard-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(280px, 1fr));
-      gap: 8px;
+      grid-template-columns: repeat(3, minmax(320px, 1fr));
+      gap: 10px;
       margin: 0 0 12px;
     }
     .chart-panel {
@@ -158,21 +158,22 @@
       overflow: hidden;
     }
     .chart-panel h2 {
-      margin: 0 0 6px;
-      color: #777;
-      font-size: 17px;
-      font-weight: 650;
+      margin: 0 0 8px;
+      color: #333;
+      font-size: 15px;
+      font-weight: 700;
     }
     .budget-chart {
       display: block;
       width: 100%;
-      height: 220px;
+      height: 232px;
     }
     .chart-legend-list {
       display: flex;
       flex-wrap: wrap;
-      gap: 5px 10px;
-      margin-top: 6px;
+      gap: 6px 12px;
+      min-height: 16px;
+      margin-top: 8px;
       color: #444;
       font-size: 11px;
       line-height: 1.25;
@@ -188,6 +189,10 @@
       width: 9px;
       height: 9px;
       border-radius: 2px;
+    }
+    .chart-legend-list.is-compact {
+      max-height: 54px;
+      overflow: hidden;
     }
     .tabs {
       display: flex;
@@ -490,29 +495,34 @@
 
     <section class="dashboard-grid" aria-label="Dashboard budzetu">
       <div class="chart-panel">
-        <h2>Saldo E&amp;J wzgledem planu</h2>
+        <h2>Saldo portfela wobec planu</h2>
         <canvas class="budget-chart" id="chart-balance-plan"></canvas>
+        <div class="chart-legend-list" id="chart-balance-plan-legend"></div>
       </div>
       <div class="chart-panel">
-        <h2>Miesieczne przychody E&amp;J</h2>
+        <h2>Przychody miesieczne</h2>
         <canvas class="budget-chart" id="chart-income"></canvas>
+        <div class="chart-legend-list" id="chart-income-legend"></div>
       </div>
       <div class="chart-panel">
-        <h2>Planowana i realna oszczednosc</h2>
+        <h2>Oszczednosci miesieczne: plan vs wykonanie</h2>
         <canvas class="budget-chart" id="chart-saving"></canvas>
+        <div class="chart-legend-list" id="chart-saving-legend"></div>
       </div>
       <div class="chart-panel">
         <h2>Struktura sald wedlug kont</h2>
         <canvas class="budget-chart" id="chart-balance-stack"></canvas>
-        <div class="chart-legend-list" id="chart-balance-stack-legend"></div>
+        <div class="chart-legend-list is-compact" id="chart-balance-stack-legend"></div>
       </div>
       <div class="chart-panel">
         <h2>Roczne przychody i wydatki</h2>
         <canvas class="budget-chart" id="chart-annual"></canvas>
+        <div class="chart-legend-list" id="chart-annual-legend"></div>
       </div>
       <div class="chart-panel">
         <h2>Planowane wydatki miesieczne</h2>
         <canvas class="budget-chart" id="chart-costs"></canvas>
+        <div class="chart-legend-list" id="chart-costs-legend"></div>
       </div>
     </section>
 
@@ -664,7 +674,14 @@
         annual: document.getElementById("chart-annual"),
         costs: document.getElementById("chart-costs")
       };
-      const balanceStackLegendEl = document.getElementById("chart-balance-stack-legend");
+      const dashboardLegends = {
+        balancePlan: document.getElementById("chart-balance-plan-legend"),
+        income: document.getElementById("chart-income-legend"),
+        saving: document.getElementById("chart-saving-legend"),
+        balanceStack: document.getElementById("chart-balance-stack-legend"),
+        annual: document.getElementById("chart-annual-legend"),
+        costs: document.getElementById("chart-costs-legend")
+      };
 
       function emptyMonth() {
         return { balance: {} };
@@ -888,7 +905,7 @@
         ctx.clearRect(0, 0, width, height);
         ctx.font = "11px Segoe UI, Arial, sans-serif";
         ctx.lineWidth = 1;
-        return { ctx, width, height, left: 46, right: 10, top: 14, bottom: 34 };
+        return { ctx, width, height, left: 58, right: 14, top: 12, bottom: 30 };
       }
 
       function chartScale(values, pad) {
@@ -904,6 +921,34 @@
         return match ? match[1] : "";
       }
 
+      function shortChartLabel(label) {
+        const text = String(label || "");
+        const match = text.match(/^(\d{4})-(\d{2})$/);
+        if (match) {
+          return match[2] + "." + match[1].slice(2);
+        }
+        return text;
+      }
+
+      function xTickIndexes(xLabels) {
+        if (xLabels.length <= 1) {
+          return [0];
+        }
+        if (xLabels.length <= 12) {
+          return [0, Math.floor((xLabels.length - 1) / 2), xLabels.length - 1];
+        }
+        const indexes = [0];
+        for (let i = 1; i < xLabels.length; i += 1) {
+          if (yearFromLabel(xLabels[i]) && yearFromLabel(xLabels[i]) !== yearFromLabel(xLabels[i - 1])) {
+            indexes.push(i);
+          }
+        }
+        indexes.push(xLabels.length - 1);
+        return Array.from(new Set(indexes)).filter(function (index) {
+          return index >= 0 && index < xLabels.length;
+        });
+      }
+
       function drawYearBoundaries(chart, xLabels) {
         const { ctx, width, left, right, top, bottom } = chart;
         const plotW = width - left - right;
@@ -917,8 +962,8 @@
           }
         }
         ctx.save();
-        ctx.strokeStyle = "#a9a196";
-        ctx.fillStyle = "#7a7168";
+        ctx.strokeStyle = "#d4ccc1";
+        ctx.fillStyle = "#8b8379";
         ctx.setLineDash([3, 4]);
         ctx.textAlign = "left";
         ctx.textBaseline = "top";
@@ -928,7 +973,7 @@
           ctx.moveTo(x, top);
           ctx.lineTo(x, top + plotH);
           ctx.stroke();
-          ctx.fillText(boundary.year, Math.min(x + 4, width - right - 30), top + 2);
+          ctx.fillText(boundary.year, Math.min(x + 4, width - right - 30), top + 3);
         });
         ctx.restore();
       }
@@ -937,6 +982,7 @@
         const { ctx, width, height, left, right, top, bottom } = chart;
         const plotW = width - left - right;
         const plotH = height - top - bottom;
+        drawYearBoundaries(chart, xLabels);
         ctx.strokeStyle = "#e4dfd6";
         ctx.fillStyle = "#555";
         ctx.textAlign = "right";
@@ -950,7 +996,6 @@
           ctx.stroke();
           ctx.fillText(compactMoney(value), left - 6, y);
         }
-        drawYearBoundaries(chart, xLabels);
         ctx.strokeStyle = "#333";
         ctx.beginPath();
         ctx.moveTo(left, top);
@@ -959,23 +1004,19 @@
         ctx.stroke();
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
-        const ticks = xLabels.length <= 1 ? [0] : [0, Math.floor((xLabels.length - 1) / 2), xLabels.length - 1];
-        ticks.forEach(function (index) {
+        xTickIndexes(xLabels).forEach(function (index) {
           const x = left + (xLabels.length <= 1 ? 0 : index / (xLabels.length - 1) * plotW);
-          ctx.fillText(xLabels[index], x, top + plotH + 8);
+          ctx.fillText(shortChartLabel(xLabels[index]), x, top + plotH + 8);
         });
       }
 
-      function drawLegend(ctx, items, x, y) {
-        ctx.textAlign = "left";
-        ctx.textBaseline = "middle";
-        items.forEach(function (item, index) {
-          const offset = index * 92;
-          ctx.fillStyle = item.color;
-          ctx.fillRect(x + offset, y - 5, 10, 10);
-          ctx.fillStyle = "#333";
-          ctx.fillText(item.label, x + offset + 15, y);
-        });
+      function renderChartLegend(container, items) {
+        if (!container) {
+          return;
+        }
+        container.innerHTML = items.map(function (item) {
+          return `<span><i style="background:${item.color}"></i>${item.label}</span>`;
+        }).join("");
       }
 
       function drawLineChart(canvas, labels, series) {
@@ -988,7 +1029,6 @@
         const xFor = function (index) { return left + (labels.length <= 1 ? 0 : index / (labels.length - 1) * plotW); };
         const yFor = function (value) { return top + plotH - (value - scale.min) / (scale.max - scale.min) * plotH; };
         drawGrid(chart, scale, labels);
-        drawLegend(ctx, series.map(function (item) { return { label: item.label, color: item.color }; }), left + 28, 8);
         series.forEach(function (item) {
           ctx.strokeStyle = item.color;
           ctx.lineWidth = 2;
@@ -1055,7 +1095,6 @@
         const yFor = function (value) { return top + plotH - (value - scale.min) / (scale.max - scale.min) * plotH; };
         const zeroY = yFor(0);
         drawGrid(chart, scale, labels);
-        drawLegend(ctx, series.map(function (item) { return { label: item.label, color: item.color }; }), left + 62, 8);
         series.forEach(function (item, seriesIndex) {
           ctx.fillStyle = item.color;
           item.values.forEach(function (value, index) {
@@ -1110,7 +1149,6 @@
         const yFor = function (value) { return top + plotH - (value - scale.min) / (scale.max - scale.min) * plotH; };
         const zeroY = yFor(0);
         drawGrid(chart, scale, labels);
-        drawLegend(ctx, [{ label: legendLabel, color: color }], left + 62, 8);
         ctx.fillStyle = color;
         values.forEach(function (value, index) {
           if (!Number.isFinite(value)) {
@@ -1132,10 +1170,9 @@
         const xFor = function (index) { return left + (labels.length <= 1 ? 0 : index / (labels.length - 1) * plotW); };
         const yFor = function (value) { return top + plotH - (value - scale.min) / (scale.max - scale.min) * plotH; };
         drawGrid(chart, scale, labels);
-        drawLegend(ctx, [{ label: "wydatki", color: "#4285f4" }, { label: "przychod", color: "#ea4335" }], left + 62, 8);
         [
-          { values: costValues, color: "#4285f4", trend: "rgba(66, 133, 244, 0.35)" },
-          { values: incomeValues, color: "#ea4335", trend: "rgba(234, 67, 53, 0.35)" }
+          { values: costValues, color: "#2f6fdd", trend: "rgba(47, 111, 221, 0.28)" },
+          { values: incomeValues, color: "#d6453d", trend: "rgba(214, 69, 61, 0.28)" }
         ].forEach(function (series) {
           const points = series.values.map(function (value, index) { return { x: index, y: value }; }).filter(function (point) { return Number.isFinite(point.y); });
           ctx.fillStyle = series.color;
@@ -1158,15 +1195,6 @@
             ctx.stroke();
           }
         });
-      }
-
-      function renderBalanceStackLegend(stacks) {
-        if (!balanceStackLegendEl) {
-          return;
-        }
-        balanceStackLegendEl.innerHTML = stacks.map(function (item) {
-          return `<span><i style="background:${item.color}"></i>${item.label}</span>`;
-        }).join("");
       }
 
       function monthIncome(month) {
@@ -1341,18 +1369,37 @@
         });
 
         drawLineChart(dashboardCharts.balancePlan, labels, [
-          { label: "suma", color: "#4285f4", values: balanceTotals },
-          { label: "suma plan", color: "#ea4335", values: balancePlans }
+          { label: "Saldo rzeczywiste", color: "#2f6fdd", values: balanceTotals },
+          { label: "Plan salda", color: "#d6453d", values: balancePlans }
         ]);
-        drawScatterChart(dashboardCharts.income, labels, incomes, "#4285f4", "rgba(66, 133, 244, 0.35)");
+        renderChartLegend(dashboardLegends.balancePlan, [
+          { label: "Saldo rzeczywiste", color: "#2f6fdd" },
+          { label: "Plan salda", color: "#d6453d" }
+        ]);
+        drawScatterChart(dashboardCharts.income, labels, incomes, "#2f6fdd", "rgba(47, 111, 221, 0.28)");
+        renderChartLegend(dashboardLegends.income, [
+          { label: "Przychody miesieczne", color: "#2f6fdd" },
+          { label: "Trend", color: "rgba(47, 111, 221, 0.28)" }
+        ]);
         drawGroupedBars(dashboardCharts.saving, labels, [
-          { label: "prognoza", color: "#4285f4", values: plannedSaving },
-          { label: "realna", color: "#ea4335", values: realSaving }
+          { label: "Plan", color: "#2f6fdd", values: plannedSaving },
+          { label: "Wykonanie", color: "#d6453d", values: realSaving }
+        ]);
+        renderChartLegend(dashboardLegends.saving, [
+          { label: "Plan", color: "#2f6fdd" },
+          { label: "Wykonanie", color: "#d6453d" }
         ]);
         drawStackedBars(dashboardCharts.balanceStack, labels, balanceStacks);
-        renderBalanceStackLegend(balanceStacks);
+        renderChartLegend(dashboardLegends.balanceStack, balanceStacks);
         drawAnnualChart(dashboardCharts.annual, years, annualIncome, annualCosts);
-        drawBarChart(dashboardCharts.costs, labels, costs, "#4285f4", "wydatki planowane");
+        renderChartLegend(dashboardLegends.annual, [
+          { label: "Przychody", color: "#d6453d" },
+          { label: "Wydatki", color: "#2f6fdd" }
+        ]);
+        drawBarChart(dashboardCharts.costs, labels, costs, "#2f6fdd", "Wydatki planowane");
+        renderChartLegend(dashboardLegends.costs, [
+          { label: "Wydatki planowane", color: "#2f6fdd" }
+        ]);
       }
 
       function renderAnnual(yearData) {
