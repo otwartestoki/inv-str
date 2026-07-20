@@ -383,8 +383,7 @@
         ["fuel", "Paliwo"],
         ["mbank", "mBank"],
         ["holidays", "Wakacje"],
-        ["special", "Cel specjalny"],
-        ["plannedSaving", "Prognoza oszcz."]
+        ["special", "Cel specjalny"]
       ];
       const salaryCommentFields = [
         ["ewaNote", "Komentarz Ewa"],
@@ -553,6 +552,10 @@
         return numberValue(month.fixedCosts) + numberValue(month.fuel) + numberValue(month.mbank) + numberValue(month.holidays) + numberValue(month.special);
       }
 
+      function monthPlannedSaving(month) {
+        return monthIncome(month) - monthPlannedCosts(month);
+      }
+
       function monthBalanceTotal(month) {
         return balanceFields
           .filter(function ([key]) { return key !== "plannedBalance"; })
@@ -587,7 +590,7 @@
 
       function renderIncomeTable(yearData) {
         const rows = [];
-        rows.push("<thead><tr><th>Miesiac</th>" + incomeFields.map(function ([, label]) { return `<th>${label}</th>`; }).join("") + salaryCommentFields.map(function ([, label]) { return `<th>${label}</th>`; }).join("") + "<th>Wplywy</th><th>Plan koszty</th><th>Plan nadwyzka</th></tr></thead>");
+        rows.push("<thead><tr><th>Miesiac</th>" + incomeFields.map(function ([, label]) { return `<th>${label}</th>`; }).join("") + salaryCommentFields.map(function ([, label]) { return `<th>${label}</th>`; }).join("") + "<th>Wplywy</th><th>Plan koszty</th><th>Prognoza oszcz.</th></tr></thead>");
         rows.push("<tbody>");
         yearData.months.forEach(function (month, index) {
           const income = monthIncome(month);
@@ -602,7 +605,7 @@
           });
           rows.push(`<td class="readonly">${formatMoney(income)}</td>`);
           rows.push(`<td class="readonly">${formatMoney(costs)}</td>`);
-          rows.push(`<td class="readonly ${income - costs >= 0 ? "good" : "bad"}">${formatMoney(income - costs)}</td>`);
+          rows.push(`<td class="readonly ${monthPlannedSaving(month) >= 0 ? "good" : "bad"}">${formatMoney(monthPlannedSaving(month))}</td>`);
           rows.push("</tr>");
         });
         rows.push("</tbody>");
@@ -615,7 +618,7 @@
         const rows = [];
         rows.push("<thead><tr><th>Miesiac</th><th>Prognoza</th><th>Prognoza skum.</th><th>Realna oszcz.</th><th>Realna skum.</th><th>Miesiac</th><th>Rok</th></tr></thead><tbody>");
         yearData.months.forEach(function (month, index) {
-          const planned = numberValue(month.plannedSaving);
+          const planned = monthPlannedSaving(month);
           plannedCum += planned;
           const realEntered = hasValue(month.realSaving);
           if (realEntered) {
@@ -658,7 +661,7 @@
       }
 
       function renderAnnual(yearData) {
-        const planSaving = yearData.months.reduce(function (sum, month) { return sum + numberValue(month.plannedSaving); }, 0);
+        const planSaving = yearData.months.reduce(function (sum, month) { return sum + monthPlannedSaving(month); }, 0);
         const realSaving = yearData.months.reduce(function (sum, month) { return sum + (hasValue(month.realSaving) ? numberValue(month.realSaving) : 0); }, 0);
         const income = yearData.months.reduce(function (sum, month) { return sum + monthIncome(month); }, 0);
         const costs = yearData.months.reduce(function (sum, month) { return sum + monthPlannedCosts(month); }, 0);
@@ -719,9 +722,7 @@
       function refreshLinkedTables(input) {
         const yearData = currentYearData();
         if (input.dataset.section === "month") {
-          if (input.dataset.field === "plannedSaving") {
-            renderSavingTable(yearData);
-          }
+          renderSavingTable(yearData);
           renderAnnual(yearData);
         } else if (input.dataset.section === "balance") {
           renderAnnual(yearData);
