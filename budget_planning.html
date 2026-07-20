@@ -700,7 +700,7 @@
         renderAnnual(yearData);
       }
 
-      function updateFromInput(input) {
+      function updateFromInput(input, rerender) {
         const yearData = currentYearData();
         const month = yearData.months[Number(input.dataset.month)];
         const field = input.dataset.field;
@@ -711,7 +711,21 @@
           month[field] = input.value;
         }
         saveState();
-        render();
+        if (rerender) {
+          render();
+        }
+      }
+
+      function refreshLinkedTables(input) {
+        const yearData = currentYearData();
+        if (input.dataset.section === "month") {
+          if (input.dataset.field === "plannedSaving") {
+            renderSavingTable(yearData);
+          }
+          renderAnnual(yearData);
+        } else if (input.dataset.section === "balance") {
+          renderAnnual(yearData);
+        }
       }
 
       function clonePlanFromPreviousYear(newYear) {
@@ -726,10 +740,18 @@
         return cloned;
       }
 
+      document.addEventListener("input", function (event) {
+        const input = event.target;
+        if (input.matches("[data-section]")) {
+          updateFromInput(input, false);
+          refreshLinkedTables(input);
+        }
+      });
+
       document.addEventListener("change", function (event) {
         const input = event.target;
         if (input.matches("[data-section]")) {
-          updateFromInput(input);
+          updateFromInput(input, true);
         }
       });
 
