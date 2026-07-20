@@ -326,9 +326,9 @@
       max-width: 452px;
     }
     #balance-table {
-      width: 1126px;
-      min-width: 1126px;
-      max-width: 1126px;
+      width: 1196px;
+      min-width: 1196px;
+      max-width: 1196px;
     }
     th, td {
       border-bottom: 1px solid #e7e1d8;
@@ -1318,6 +1318,13 @@
         return monthIncome(month) - monthPlannedCosts(month);
       }
 
+      function monthRealCosts(month) {
+        if (!hasValue(month.realSaving)) {
+          return NaN;
+        }
+        return monthIncome(month) - numberValue(month.realSaving);
+      }
+
       function monthBalanceTotal(month) {
         return balanceFields
           .filter(function ([key]) { return key !== "plannedBalance"; })
@@ -1420,16 +1427,18 @@
 
       function renderBalanceTable(yearData) {
         const rows = [];
-        rows.push("<thead><tr><th class=\"month-col\">Miesiac</th>" + balanceFields.map(function ([, label]) { return `<th class="num-col">${label}</th>`; }).join("") + "<th class=\"calc-col\">Suma realna</th><th class=\"calc-col\">Roznica</th></tr></thead><tbody>");
+        rows.push("<thead><tr><th class=\"month-col\">Miesiac</th>" + balanceFields.map(function ([, label]) { return `<th class="num-col">${label}</th>`; }).join("") + "<th class=\"calc-col\">Realne wyd.</th><th class=\"calc-col\">Suma realna</th><th class=\"calc-col\">Roznica</th></tr></thead><tbody>");
         yearData.months.forEach(function (month, index) {
           const balance = month.balance || {};
           const total = monthBalanceTotal(month);
           const planned = numberValue(balance.plannedBalance);
+          const realCosts = monthRealCosts(month);
           rows.push("<tr>");
           rows.push(`<td class="month-cell month-col">${monthLabels[index]}</td>`);
           balanceFields.forEach(function ([key]) {
             rows.push(`<td class="num-col">${inputHtml("balance", index, key, balance[key])}</td>`);
           });
+          rows.push(`<td class="readonly calc-col">${Number.isFinite(realCosts) ? formatMoney(realCosts) : "-"}</td>`);
           rows.push(`<td class="readonly calc-col">${formatMoney(total)}</td>`);
           rows.push(`<td class="readonly calc-col ${total - planned >= 0 ? "good" : "bad"}">${planned ? formatMoney(total - planned) : "-"}</td>`);
           rows.push("</tr>");
@@ -1661,6 +1670,9 @@
         if (input.dataset.section === "month") {
           if (tableId !== "saving-table") {
             renderSavingTable(yearData);
+          }
+          if (tableId !== "balance-table") {
+            renderBalanceTable(yearData);
           }
           renderAnnual(yearData);
         } else if (input.dataset.section === "balance") {
