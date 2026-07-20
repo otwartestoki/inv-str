@@ -1,57 +1,57 @@
 # Glowne podsumowanie strategii
 
-Okres backtestu: **1954-07-02 - 2026-07-10**
-Ostatni sygnal: **2026-07-10**
+Okres backtestu: **1954-07-02 - 1990-12-28**
+Ostatni sygnal: **1990-12-28**
 
 ## Najwazniejsze wnioski
-- Strategia konczy z CAGR **11.13%**, max drawdown **-26.98%** i wartoscia koncowa **2,010.06** z poczatkowych 1.00.
-- Rekomendowany miks 30/70/0 ma CAGR **13.92%** przy max drawdown **-27.50%**; to domyslny kompromis miedzy strategia bazowa i srednio agresywna.
-- Wariant srednio agresywny ma CAGR **15.06%** przy max drawdown **-32.20%**; uzywa tego samego filtra momentum, ale tylko do 180% ekspozycji.
-- Wariant agresywny ma CAGR **19.95%** przy max drawdown **-52.89%**; to test, a nie domyslny wariant rebalancingu.
-- 100% akcji ma podobny CAGR (**11.12%**), ale duzo glebszy max drawdown (**-54.61%**).
-- Aktualnie strategia jest defensywna: akcje **31.12%**, obligacje/gotowka **68.88%**, zloto **0.00%**.
+- Strategia konczy z CAGR **10.20%**, max drawdown **-26.98%** i wartoscia koncowa **34.65** z poczatkowych 1.00.
+- Rekomendowany miks 30/70/0 ma CAGR **12.54%** przy max drawdown **-27.35%**; to domyslny kompromis miedzy strategia bazowa i srednio agresywna.
+- Wariant srednio agresywny ma CAGR **13.54%** przy max drawdown **-27.50%**; uzywa tego samego filtra momentum, ale tylko do 180% ekspozycji.
+- Wariant agresywny ma CAGR **18.01%** przy max drawdown **-27.50%**; to test, a nie domyslny wariant rebalancingu.
+- 100% akcji ma podobny CAGR (**10.99%**), ale duzo glebszy max drawdown (**-39.16%**).
+- Aktualnie strategia jest defensywna: akcje **55.00%**, obligacje/gotowka **45.00%**, zloto **0.00%**.
 - W czesci obligacyjnej sygnal duration wynosi **50.00%**: to oznacza czesciowe, ale nie pelne, wejscie w obligacje stale.
 
 ## Wyniki
 | Portfel | CAGR | Max DD | Zmiennosc | Sharpe | Wartosc koncowa |
 |---|---:|---:|---:|---:|---:|
-| Strategia | 11.13% | -26.98% | 9.57% | 1.16 | 2,010.06 |
-| Rekomendowany miks 30/70/0 | 13.92% | -27.50% | 12.20% | 1.14 | 11,923.41 |
-| Strategia srednio agresywna | 15.06% | -32.20% | 13.59% | 1.11 | 24,568.86 |
-| Strategia agresywna | 19.95% | -52.89% | 21.73% | 0.92 | 491,969.18 |
-| 100% akcje | 11.12% | -54.61% | 12.36% | 0.90 | 1,991.85 |
-| 80/20 | 10.11% | -44.05% | 9.90% | 1.02 | 1,033.04 |
-| 60/40 | 9.02% | -31.58% | 7.76% | 1.16 | 503.12 |
+| Strategia | 10.20% | -26.98% | 6.10% | 1.67 | 34.65 |
+| Rekomendowany miks 30/70/0 | 12.54% | -27.35% | 6.41% | 1.96 | 74.63 |
+| Strategia srednio agresywna | 13.54% | -27.50% | 6.69% | 2.03 | 103.30 |
+| Strategia agresywna | 18.01% | -27.50% | 8.53% | 2.11 | 421.89 |
+| 100% akcje | 10.99% | -39.16% | 5.81% | 1.89 | 45.06 |
+| 80/20 | 10.00% | -32.32% | 4.99% | 2.00 | 32.43 |
+| 60/40 | 8.97% | -24.95% | 4.80% | 1.87 | 23.05 |
 
 ## Aktualna alokacja modelu
 | Klasa | Udzial |
 |---|---:|
-| Akcje USA / SPX | 31.12% |
+| Akcje USA / SPX | 11.00% |
 | Akcje swiat | 0.00% |
-| Tech / NDX | 0.00% |
-| Obligacje stale / 30+ | 34.44% |
-| Obligacje zmienne / gotowka | 34.44% |
+| Tech / NDX | 44.00% |
+| Obligacje stale / 30+ | 22.50% |
+| Obligacje zmienne / gotowka | 22.50% |
 | Zloto | 0.00% |
 
 ## Praktyczny podzial do panelu rebalancingu
 | Pozycja | Cel |
 |---|---:|
-| Akcje | 31.12% |
-| Polskie obligacje nominalne | 34.44% |
-| Polskie obligacje stale % | 8.61% |
-| Polskie obligacje zmienne % | 8.61% |
-| Zagraniczne obligacje stale % | 8.61% |
-| Zagraniczne obligacje zmienne % | 8.61% |
+| Akcje | 55.00% |
+| Polskie obligacje nominalne | 22.50% |
+| Polskie obligacje stale % | 5.62% |
+| Polskie obligacje zmienne % | 5.62% |
+| Zagraniczne obligacje stale % | 5.62% |
+| Zagraniczne obligacje zmienne % | 5.62% |
 | Zloto | 0.00% |
 
 ## Aktualne sygnaly makro
 - Shiller: **80.00% akcji**
-- Cykl Fed/bezrobocie/PKB: **0.00% akcji**
-- Forward P/E: **13.37% akcji**
-- CPI YoY: **3.67%**
-- Real 10Y: **0.87%**
-- GDP YoY: **0.64%**
-- Forward P/E proxy: **42.66**
+- Cykl Fed/bezrobocie/PKB: **80.00% akcji**
+- Forward P/E: **86.07% akcji**
+- CPI YoY: **6.25%**
+- Real 10Y: **1.89%**
+- GDP YoY: **0.60%**
+- Forward P/E proxy: **13.35**
 
 ## Najwazniejsze raporty
 - [Kapital i drawdown - skala liniowa](equity_curve_100.svg)
@@ -69,7 +69,7 @@ Ostatni sygnal: **2026-07-10**
 - [Lista transakcji i rebalancing](transactions_rebalancing.html)
 
 ## Jakosc danych
-- high_1985_plus: 2167 tygodni
+- high_1985_plus: 313 tygodni
 - medium_proxy_1971_1984: 731 tygodni
 - medium_proxy_pre_1971: 861 tygodni
 
