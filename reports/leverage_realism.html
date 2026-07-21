@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wiarygodnosc backtestu lewarowanego</title>
+  <style>
+    body { font-family: Segoe UI, Arial, sans-serif; margin: 0; color: #243033; background: #f6f3ee; }
+    main { max-width: 1180px; margin: 0 auto; padding: 24px; }
+    a { color: #0b5cad; }
+    .panel { background: #fff; border: 1px solid #ddd4c7; border-radius: 8px; padding: 16px; margin: 14px 0; }
+    table { width: 100%; border-collapse: collapse; background: #fff; }
+    th, td { border-bottom: 1px solid #e7e1d8; padding: 8px 9px; text-align: right; white-space: nowrap; }
+    th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+    th { background: #f1ece4; }
+    .warn { color: #8a3b00; font-weight: 700; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+    .metric strong { display: block; font-size: 24px; }
+    .metric span { color: #6b6258; font-size: 13px; }
+  </style>
+</head>
+<body>
+<main>
+  <nav><a href="../report_view.html">Backtest strategii</a> / Wiarygodnosc lewara</nav>
+  <h1>Wiarygodnosc backtestu strategii lewarowanych</h1>
+  <p>Okres dziennej analizy: <strong>2008-03-28 - 2026-07-17</strong>. Zakres zaczyna sie dopiero wtedy,
+  gdy dostepne sa realne dzienne dane ETF dla SPY, QQQ, ACWI, TLT i GLD.</p>
+  <section class="panel">
+      <p><strong>Interpretacja:</strong> ten raport nie probuje udowodnic, ze lewar jest dobry albo zly.
+      Pokazuje, jak bardzo wynik wariantow lewarowanych zalezy od sposobu liczenia. Model tygodniowy mnozy
+      tygodniowa stope zwrotu przez ekspozycje, natomiast model dzienny sklada codzienne ruchy indeksow,
+      odejmuje koszt finansowania i koszt produktu lewarowanego. To jest uczciwsze dla ETF-ow 2x/3x.</p>
+    </section>
+  <section class="panel">
+    <h2>Porownanie metryk</h2>
+    <p><a href="leverage_realism_metrics.csv">CSV metryk</a> / <a href="leverage_realism_returns.csv">CSV dziennych zwrotow</a></p>
+    <table>
+      <thead><tr><th>Wariant</th><th>Model</th><th>CAGR</th><th>Zmiennosc</th><th>Max DD</th><th>Kapital koncowy</th><th>Roznica CAGR vs tyg.</th></tr></thead>
+      <tbody><tr><td>Bazowa</td><td class="">Tygodniowy obecny</td><td>12.37%</td><td>12.93%</td><td>-25.87%</td><td>8.47</td><td>0.00%</td></tr><tr><td>Bazowa</td><td class="">Dzienny reset bazowy</td><td>12.91%</td><td>13.51%</td><td>-26.53%</td><td>9.20</td><td>0.54%</td></tr><tr><td>Bazowa</td><td class="warn">Dzienny reset konserwatywny</td><td>12.91%</td><td>13.51%</td><td>-26.53%</td><td>9.20</td><td>0.54%</td></tr><tr><td>Rekomendowany miks</td><td class="">Tygodniowy obecny</td><td>14.97%</td><td>16.35%</td><td>-25.87%</td><td>12.88</td><td>0.00%</td></tr><tr><td>Rekomendowany miks</td><td class="">Dzienny reset bazowy</td><td>15.68%</td><td>17.06%</td><td>-26.53%</td><td>14.33</td><td>0.72%</td></tr><tr><td>Rekomendowany miks</td><td class="warn">Dzienny reset konserwatywny</td><td>15.20%</td><td>17.06%</td><td>-26.53%</td><td>13.28</td><td>0.24%</td></tr><tr><td>Srednio agresywna</td><td class="">Tygodniowy obecny</td><td>16.00%</td><td>18.10%</td><td>-25.87%</td><td>15.16</td><td>0.00%</td></tr><tr><td>Srednio agresywna</td><td class="">Dzienny reset bazowy</td><td>16.76%</td><td>18.87%</td><td>-26.53%</td><td>16.97</td><td>0.76%</td></tr><tr><td>Srednio agresywna</td><td class="warn">Dzienny reset konserwatywny</td><td>16.04%</td><td>18.87%</td><td>-26.53%</td><td>15.16</td><td>0.04%</td></tr><tr><td>Agresywna</td><td class="">Tygodniowy obecny</td><td>21.22%</td><td>28.73%</td><td>-39.04%</td><td>33.98</td><td>0.00%</td></tr><tr><td>Agresywna</td><td class="">Dzienny reset bazowy</td><td>22.11%</td><td>29.86%</td><td>-43.21%</td><td>38.48</td><td>0.89%</td></tr><tr><td>Agresywna</td><td class="warn">Dzienny reset konserwatywny</td><td>19.96%</td><td>29.85%</td><td>-45.66%</td><td>27.80</td><td>-1.26%</td></tr></tbody>
+    </table>
+  </section>
+  <section class="panel">
+    <h2>Zalozenia modelu dziennego</h2>
+    <ul>
+      <li>Wagi strategii sa brane z tygodniowego modelu, ale zwroty akcji i ETF-ow sa skladane dziennie.</li>
+      <li>Model bazowy dzienny: koszt finansowania = Fed Funds + 1,5 p.p.; koszt produktu/tracking = 1,25% rocznie na nadwyzce ekspozycji akcyjnej ponad 100%.</li>
+      <li>Model konserwatywny: koszt finansowania = Fed Funds + 2,5 p.p.; koszt produktu/tracking = 2,5% rocznie na nadwyzce ekspozycji akcyjnej ponad 100%.</li>
+      <li>Wyniki przed 2008 rokiem nie sa tu pokazywane, bo wymagaloby to syntetycznego ACWI/GLD/TLT i znowu obnizaloby wiarygodnosc.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

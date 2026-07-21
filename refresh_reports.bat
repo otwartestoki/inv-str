@@ -19,6 +19,7 @@ python .\annual_heatmap_report.py || goto :error
 python .\decade_report.py || goto :error
 python .\underwater_report.py || goto :error
 python .\strategy_mix_report.py || goto :error
+python .\leverage_realism_report.py || goto :error
 python .\transaction_report.py || goto :error
 python .\bond_switch_report.py || goto :error
 

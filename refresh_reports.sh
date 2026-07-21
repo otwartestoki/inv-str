@@ -19,6 +19,7 @@ python annual_heatmap_report.py
 python decade_report.py
 python underwater_report.py
 python strategy_mix_report.py
+python leverage_realism_report.py
 python transaction_report.py
 python bond_switch_report.py
 

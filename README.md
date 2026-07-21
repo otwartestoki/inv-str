@@ -426,6 +426,7 @@ Glowne pliki w katalogu `reports`:
 - `annual_heatmap.html` - heatmapa rocznych stop zwrotu i rocznych max drawdown.
 - `decade_comparison.html` - porownanie dekadowe strategii i benchmarkow.
 - `underwater_duration.html` - analiza czasu na stracie wzgledem poprzedniego ATH.
+- `leverage_realism.html` - porownanie tygodniowego backtestu lewara z dzienna symulacja resetu ETF, kosztow finansowania i kosztow produktu.
 - `allocation_percent.svg` - udzial akcji strategii i benchmarkow na tle SPX.
 - `rates_vs_unemployment.svg` - Fed Funds vs bezrobocie na tle SPX.
 - `pe_hysteresis_path.svg` - sciezka po petli histerezy P/E.

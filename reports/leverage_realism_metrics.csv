@@ -1,0 +1,13 @@
+variant,variant_label,model,CAGR,Volatility,MaxDrawdown,FinalWealth,CAGR_gap_vs_weekly
+strategy,Bazowa,Tygodniowy obecny,0.12367854,0.12930639,-0.25866696,8.46970043,0.00000000
+strategy,Bazowa,Dzienny reset bazowy,0.12910112,0.13506292,-0.26526330,9.19665346,0.00542258
+strategy,Bazowa,Dzienny reset konserwatywny,0.12910112,0.13506292,-0.26526330,9.19665346,0.00542258
+strategy_recommended_mix,Rekomendowany miks,Tygodniowy obecny,0.14965861,0.16352839,-0.25866696,12.87501625,0.00000000
+strategy_recommended_mix,Rekomendowany miks,Dzienny reset bazowy,0.15684646,0.17057489,-0.26526330,14.33139502,0.00718785
+strategy_recommended_mix,Rekomendowany miks,Dzienny reset konserwatywny,0.15201136,0.17056672,-0.26526330,13.27544639,0.00235275
+strategy_medium_aggressive,Srednio agresywna,Tygodniowy obecny,0.15996605,0.18099464,-0.25866696,15.16251169,0.00000000
+strategy_medium_aggressive,Srednio agresywna,Dzienny reset bazowy,0.16759642,0.18873732,-0.26526330,16.97051278,0.00763037
+strategy_medium_aggressive,Srednio agresywna,Dzienny reset konserwatywny,0.16039105,0.18872320,-0.26526330,15.15541875,0.00042500
+strategy_aggressive,Agresywna,Tygodniowy obecny,0.21218725,0.28726979,-0.39035718,33.97585792,0.00000000
+strategy_aggressive,Agresywna,Dzienny reset bazowy,0.22109115,0.29856569,-0.43213939,38.47848539,0.00890390
+strategy_aggressive,Agresywna,Dzienny reset konserwatywny,0.19955457,0.29851021,-0.45664290,27.79691545,-0.01263268
