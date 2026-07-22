@@ -10,6 +10,7 @@ import time
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -1084,6 +1085,7 @@ def write_reports(result: BacktestResult) -> None:
     }
     latest_payload = {
         "date": str(result.allocations.index[-1].date()),
+        "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
         "weights": base_weights,
         "strategies": {
             "strategy": {

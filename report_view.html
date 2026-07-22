@@ -100,6 +100,32 @@
       margin: 0 0 18px;
       font-size: 14px;
     }
+    .refresh-info {
+      margin: 18px 0 30px;
+      padding: 16px 18px;
+      border: 1px solid #d8d1c3;
+      border-left: 4px solid #15616d;
+      background: #fff;
+    }
+    .refresh-info h2 {
+      margin-bottom: 8px;
+    }
+    .refresh-info p {
+      margin: 0 0 10px;
+      line-height: 1.5;
+    }
+    .refresh-info p:last-child {
+      margin-bottom: 0;
+    }
+    .refresh-info code {
+      display: inline-block;
+      padding: 3px 7px;
+      border: 1px solid #ddd8cc;
+      border-radius: 3px;
+      color: #222;
+      background: #f7f4ed;
+      font-family: Consolas, "Courier New", monospace;
+    }
   </style>
   <script src="reports/latest_allocation.js"></script>
   <script src="reports/equity_curve_data.js"></script>
@@ -109,6 +135,12 @@
     <nav class="top-nav"><a href="index.html">Strona glowna</a> / Backtest strategii</nav>
     <h1>Backtest strategii</h1>
     <p>Uporzadkowany podglad wynikow, wykresow i tabel z backtestu od poczatku dostepnych danych do dzisiaj. Okres przed 1985 korzysta z proxy i ma nizsza jakosc danych niz nowszy fragment.</p>
+    <aside class="refresh-info" aria-labelledby="refresh-info-title">
+      <h2 id="refresh-info-title">Aktualnosc backtestu</h2>
+      <p>Strategia zostala ostatnio przeliczona: <strong id="backtest-generated-at">brak informacji</strong>. Ostatni uwzgledniony sygnal pochodzi z: <strong id="backtest-data-date">brak informacji</strong>.</p>
+      <p><strong>Aby odswiezyc dane na opublikowanej stronie:</strong> wejdz w <a href="https://github.com/otwartestoki/inv-str/actions/workflows/pages.yml">GitHub Actions</a>, wybierz workflow <em>Refresh reports and publish Pages</em>, kliknij <em>Run workflow</em>, a nastepnie ponownie <em>Run workflow</em>. Po zakonczeniu zadania odswiez strone.</p>
+      <p>Raport odswieza sie tez automatycznie w soboty o 08:25 czasu polskiego (06:25 UTC). Lokalnie wszystkie raporty przeliczysz poleceniem <code>.\refresh_reports.bat</code> uruchomionym w katalogu projektu.</p>
+    </aside>
     <section class="report-index" aria-label="Indeks raportow">
       <div class="report-group">
         <h3>Podsumowania</h3>
@@ -281,9 +313,21 @@
     (function () {
       const allocation = window.INV_STR_LATEST_ALLOCATION || {
         date: "brak danych",
+        generated_at: null,
         weights: {},
         strategies: {}
       };
+      const generatedAtEl = document.getElementById("backtest-generated-at");
+      const dataDateEl = document.getElementById("backtest-data-date");
+      if (generatedAtEl && allocation.generated_at) {
+        const generatedAt = new Date(allocation.generated_at);
+        generatedAtEl.textContent = Number.isNaN(generatedAt.getTime())
+          ? allocation.generated_at
+          : generatedAt.toLocaleString("pl-PL", { dateStyle: "long", timeStyle: "short" });
+      }
+      if (dataDateEl && allocation.date) {
+        dataDateEl.textContent = allocation.date;
+      }
       const strategyLabels = {
         strategy: "Strategia bazowa",
         strategy_recommended_mix: "Rekomendowany miks 30/70/0",
