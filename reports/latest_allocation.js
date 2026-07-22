@@ -1,5 +1,6 @@
 window.INV_STR_LATEST_ALLOCATION = {
   "date": "2026-07-17",
+  "generated_at": "2026-07-20T13:35:47+02:00",
   "weights": {
     "us_equity": 0.3112380099894047,
     "world_equity": 0.0,
